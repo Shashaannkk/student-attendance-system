@@ -1,18 +1,9 @@
-from datetime import datetime, timedelta
-from calendar_utils import is_working_day
+from attendance import mark_attendance, calculate_percentage
 
-start_date = datetime(2026, 1, 1)
-end_date = datetime(2026, 1, 10)
+print(mark_attendance("STU001", "Maths", "2026-01-04", True))   # Sunday
+print(mark_attendance("STU001", "Maths", "2026-01-05", True))   # Working day
+print(mark_attendance("STU001", "Maths", "2026-01-06", False))  # Absent
+print(mark_attendance("STU001", "Maths", "2026-01-26", True))   # Holiday
 
-working_days = 0
-
-current = start_date
-while current <= end_date:
-    if is_working_day(current):
-        print(current.strftime("%Y-%m-%d"), "-> Working Day")
-        working_days += 1
-    else:
-        print(current.strftime("%Y-%m-%d"), "-> Holiday (Weekend)")
-    current += timedelta(days=1)
-
-print("\nTotal Working Days:", working_days)
+percentage = calculate_percentage("STU001", "Maths")
+print("Attendance %:", percentage)
