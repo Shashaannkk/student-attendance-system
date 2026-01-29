@@ -14,8 +14,12 @@ def save_data(data):
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
+def normalize_username(username):
+    """Normalize username to lowercase for case-insensitive login."""
+    return username.strip().lower()
+
 def hash_password(password):
-    """Hash password using SHA-256 with salt based on username."""
+    """Hash password using SHA-256."""
     return hashlib.sha256(password.encode('utf-8')).hexdigest()
 
 def verify_password(password, password_hash):
@@ -26,8 +30,13 @@ def register_user(username, password, role="teacher"):
     """
     Register a new user.
     Roles: 'teacher' or 'admin'
+    Username is case-insensitive (stored in lowercase)
     Returns: success message or error
     """
+    # Normalize username
+    username = normalize_username(username)
+    role = role.strip().lower()
+    
     data = load_data()
     
     if username in data["users"]:
@@ -47,8 +56,12 @@ def register_user(username, password, role="teacher"):
 def login(username, password):
     """
     Authenticate user.
+    Username is case-insensitive.
     Returns: (user_info, message) or (None, error_message)
     """
+    # Normalize username
+    username = normalize_username(username)
+    
     data = load_data()
     
     if username not in data["users"]:
