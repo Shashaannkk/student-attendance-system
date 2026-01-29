@@ -1,9 +1,18 @@
+from students import register_student, get_student
 from attendance import mark_attendance, calculate_percentage
 
-print(mark_attendance("STU001", "Maths", "2026-01-04", True))   # Sunday
-print(mark_attendance("STU001", "Maths", "2026-01-05", True))   # Working day
-print(mark_attendance("STU001", "Maths", "2026-01-06", False))  # Absent
-print(mark_attendance("STU001", "Maths", "2026-01-26", True))   # Holiday
+# Register students
+sid1 = register_student("Rahul Sharma", "FYBCA")
+sid2 = register_student("Aman Verma", "FYBCA")
 
-percentage = calculate_percentage("STU001", "Maths")
-print("Attendance %:", percentage)
+print("Generated IDs:", sid1, sid2)
+
+# Mark attendance
+mark_attendance(sid1, "Maths", "2026-01-05", True)
+mark_attendance(sid1, "Maths", "2026-01-06", False)
+
+# Calculate percentage
+print("Attendance %:", calculate_percentage(sid1, "Maths"))
+
+# Fetch student info
+print("Student Info:", get_student(sid1))

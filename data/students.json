@@ -1,0 +1,17 @@
+{
+    "last_id": 3,
+    "students": {
+        "STU0002": {
+            "name": "Rahul Sharma",
+            "class": "FYBCA"
+        },
+        "STU0003": {
+            "name": "Aman Verma",
+            "class": "FYBCA"
+        },
+        "STU0004": {
+            "name": "Shashank",
+            "class": "FYBCA"
+        }
+    }
+}
