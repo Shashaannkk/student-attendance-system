@@ -1,0 +1,91 @@
+{
+    "year": 2026,
+    "description": "Indian National and Major Holidays for 2026",
+    "holidays": [
+        {
+            "date": "26-01-2026",
+            "name": "Republic Day",
+            "type": "national"
+        },
+        {
+            "date": "13-03-2026",
+            "name": "Holi",
+            "type": "gazetted"
+        },
+        {
+            "date": "30-03-2026",
+            "name": "Good Friday",
+            "type": "gazetted"
+        },
+        {
+            "date": "06-04-2026",
+            "name": "Ram Navami",
+            "type": "gazetted"
+        },
+        {
+            "date": "10-04-2026",
+            "name": "Mahavir Jayanti",
+            "type": "gazetted"
+        },
+        {
+            "date": "01-05-2026",
+            "name": "May Day",
+            "type": "gazetted"
+        },
+        {
+            "date": "07-05-2026",
+            "name": "Buddha Purnima",
+            "type": "gazetted"
+        },
+        {
+            "date": "31-07-2026",
+            "name": "Eid ul-Adha (Bakrid)",
+            "type": "gazetted"
+        },
+        {
+            "date": "15-08-2026",
+            "name": "Independence Day",
+            "type": "national"
+        },
+        {
+            "date": "22-08-2026",
+            "name": "Janmashtami",
+            "type": "gazetted"
+        },
+        {
+            "date": "30-08-2026",
+            "name": "Muharram",
+            "type": "gazetted"
+        },
+        {
+            "date": "02-10-2026",
+            "name": "Gandhi Jayanti",
+            "type": "national"
+        },
+        {
+            "date": "17-10-2026",
+            "name": "Dussehra",
+            "type": "gazetted"
+        },
+        {
+            "date": "29-10-2026",
+            "name": "Milad un-Nabi",
+            "type": "gazetted"
+        },
+        {
+            "date": "05-11-2026",
+            "name": "Diwali",
+            "type": "gazetted"
+        },
+        {
+            "date": "16-11-2026",
+            "name": "Guru Nanak Jayanti",
+            "type": "gazetted"
+        },
+        {
+            "date": "25-12-2026",
+            "name": "Christmas",
+            "type": "gazetted"
+        }
+    ]
+}

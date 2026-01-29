@@ -1,5 +1,5 @@
 {
-    "last_id": 4,
+    "last_id": 5,
     "students": {
         "STU0002": {
             "name": "Rahul Sharma",
@@ -20,6 +20,11 @@
             "name": "Rahul Roy",
             "class": "FYBCA",
             "roll_no": 4
+        },
+        "STU0006": {
+            "name": "Chayank Poojari",
+            "class": "FYBCA",
+            "roll_no": 6
         }
     }
 }
