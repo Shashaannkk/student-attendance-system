@@ -15,3 +15,10 @@ env/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Project Database & Logs
+attendance_sys.db
+*.log
+*.txt
+!requirements.txt
+!README.md

@@ -1,18 +1,27 @@
-from students import register_student, get_student
-from attendance import mark_attendance, calculate_percentage
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from database import create_db_and_tables
+from routers import auth, students, attendance
 
-# Register students
-sid1 = register_student("Rahul Sharma", "FYBCA")
-sid2 = register_student("Aman Verma", "FYBCA")
+app = FastAPI(title="Student Attendance System", version="2.0")
 
-print("Generated IDs:", sid1, sid2)
+# CORS (Cross-Origin Resource Sharing)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # Allow all for development
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# Mark attendance
-mark_attendance(sid1, "Maths", "2026-01-05", True)
-mark_attendance(sid1, "Maths", "2026-01-06", False)
+@app.on_event("startup")
+def on_startup():
+    create_db_and_tables()
 
-# Calculate percentage
-print("Attendance %:", calculate_percentage(sid1, "Maths"))
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to Student Attendance System API"}
 
-# Fetch student info
-print("Student Info:", get_student(sid1))
+app.include_router(auth.router)
+app.include_router(students.router, prefix="/students", tags=["students"])
+app.include_router(attendance.router, prefix="/attendance", tags=["attendance"])
