@@ -27,12 +27,6 @@ def get_current_user(token: str = Depends(oauth2_scheme), session: Session = Dep
     except JWTError:
         raise credentials_exception
         
-    # DEV MODE BYPASS: If it's the admin, skip DB lookup
-    if username == "admin":
-        # Return a mock admin user object that mimics the database model
-        # We set id=0 just to satisfy the model, though it won't be in the DB
-        return User(id=0, username="admin", role="admin", password_hash="dev_mode")
-
     statement = select(User).where(User.username == username)
     user = session.exec(statement).first()
     if user is None:
@@ -41,18 +35,28 @@ def get_current_user(token: str = Depends(oauth2_scheme), session: Session = Dep
 
 @router.post("/token", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_session)):
-    # DEV MODE BYPASS: Hardcoded check to guarantee access
-    if form_data.username == "admin" and form_data.password == "admin123":
-        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-        # Create a token for admin (role="admin")
-        access_token = create_access_token(
-            data={"sub": "admin", "role": "admin"}, expires_delta=access_token_expires
-        )
-        return {"access_token": access_token, "token_type": "bearer"}
-
     # Proceed with normal DB check for others
     statement = select(User).where(User.username == form_data.username)
     user = session.exec(statement).first()
+    
+    # DEBUG LOGGING
+    print(f"--- LOGIN ATTEMPT ---")
+    print(f"Username received: '{form_data.username}'")
+    print(f"Password received: '{form_data.password}'")
+    
+    if not user:
+        print("❌ User NOT FOUND in database.")
+        from database import DB_PATH
+        print(f"Checking DB at: {DB_PATH}")
+    else:
+        print(f"User found: {user.username}, Role: {user.role}")
+        print(f"Stored Hash: {user.password_hash}")
+        
+        is_valid = verify_password(form_data.password, user.password_hash)
+        print(f"Password Valid? {is_valid}")
+        
+        if not is_valid:
+            print("❌ Password verification FAILED.")
     
     if not user or not verify_password(form_data.password, user.password_hash):
         raise HTTPException(
@@ -66,6 +70,10 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
         data={"sub": user.username, "role": user.role}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
+
+@router.get("/users/me", response_model=User)
+async def read_users_me(current_user: User = Depends(get_current_user)):
+    return current_user
 
 @router.post("/register")
 def register_user(user: User, session: Session = Depends(get_session), current_user: User = Depends(get_current_user)):
