@@ -71,7 +71,7 @@ pydantic_core==2.41.5
 Pygments==2.18.0
 pyjokes==0.6.0
 pymongo==4.13.1
-pypiwin32==223
+
 PySocks==1.7.1
 pyTelegramBotAPI==4.16.1
 pytest==8.0.0
@@ -84,7 +84,7 @@ python-telegram-bot==20.3
 pyttsx3==2.90
 pytube==15.0.0
 pytz==2025.2
-pywin32==306
+
 PyYAML==6.0.2
 pyzmq==26.2.0
 redis==5.0.3
@@ -127,6 +127,6 @@ uvicorn==0.40.0
 wcwidth==0.2.13
 websocket-client==1.8.0
 Werkzeug==3.0.3
-windows-curses==2.4.1
+
 wsproto==1.2.0
 youtube-dl==2021.12.17
