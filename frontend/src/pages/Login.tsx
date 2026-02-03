@@ -64,7 +64,7 @@ const Login = () => {
     };
 
     const handleRegister = () => {
-        alert(`Registration for ${institutionType === 'school' ? 'School' : 'Degree College'} - Coming Soon!`);
+        navigate(`/register?type=${institutionType}`);
     };
 
     // Theme configuration

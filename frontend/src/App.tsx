@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { AttendanceProvider } from './context/AttendanceContext';
 import Layout from './components/Layout';
 import Login from './pages/Login';
+import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Attendance from './pages/Attendance';
 import RegisterUser from './pages/RegisterUser';
@@ -35,6 +36,7 @@ function App() {
                 <AttendanceProvider>
                     <Routes>
                         <Route path="/login" element={<Login />} />
+                        <Route path="/register" element={<Register />} />
 
                         {/* Protected Routes */}
                         <Route element={<ProtectedRoute />}>
