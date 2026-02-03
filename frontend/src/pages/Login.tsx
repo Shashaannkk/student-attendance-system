@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Lock, User, CheckCircle } from 'lucide-react';
+import { Lock, User, GraduationCap, BookOpen, Building2, Sparkles } from 'lucide-react';
 import { API_URL } from '../config';
 
 const Login = () => {
+    const [institutionType, setInstitutionType] = useState<'school' | 'college'>('school');
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [role, setRole] = useState<'admin' | 'teacher'>('teacher'); // Default to teacher
+    const [role, setRole] = useState<'admin' | 'teacher'>('teacher');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const { login } = useAuth();
@@ -19,13 +20,10 @@ const Login = () => {
         setError('');
 
         try {
-            // Direct API call to backend
             const formData = new URLSearchParams();
             formData.append('username', username);
             formData.append('password', password);
 
-            // Ensure we are hitting the correct endpoint. 
-            // Assuming backend is at API_URL
             const response = await fetch(`${API_URL}/token`, {
                 method: 'POST',
                 headers: {
@@ -40,8 +38,6 @@ const Login = () => {
 
             const data = await response.json();
 
-            // We need to fetch user details to know the role, or trust the token.
-            // For now, let's fetch /users/me using the token
             const userResponse = await fetch(`${API_URL}/users/me`, {
                 headers: {
                     'Authorization': `Bearer ${data.access_token}`
@@ -54,7 +50,6 @@ const Login = () => {
 
             const userData = await userResponse.json();
 
-            // Basic role validation: if user tries to login as admin but is teacher
             if (role === 'admin' && userData.role !== 'admin') {
                 throw new Error('You are not authorized as an Admin');
             }
@@ -68,111 +63,262 @@ const Login = () => {
         }
     };
 
+    const handleRegister = () => {
+        alert(`Registration for ${institutionType === 'school' ? 'School' : 'Degree College'} - Coming Soon!`);
+    };
+
+    // Theme configuration
+    const themes = {
+        school: {
+            gradient: 'from-blue-500 via-cyan-500 to-teal-400',
+            cardGradient: 'from-blue-600 to-cyan-600',
+            buttonPrimary: 'from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700',
+            buttonSecondary: 'bg-cyan-500 hover:bg-cyan-600',
+            accentColor: 'text-cyan-400',
+            icon: BookOpen,
+            title: 'School Attendance',
+            subtitle: 'Making attendance fun and easy for schools',
+            registerText: 'Register Your School'
+        },
+        college: {
+            gradient: 'from-indigo-600 via-purple-600 to-pink-500',
+            cardGradient: 'from-indigo-700 to-purple-700',
+            buttonPrimary: 'from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700',
+            buttonSecondary: 'bg-purple-500 hover:bg-purple-600',
+            accentColor: 'text-purple-400',
+            icon: GraduationCap,
+            title: 'College Attendance',
+            subtitle: 'Professional attendance management for degree colleges',
+            registerText: 'Register Your College'
+        }
+    };
+
+    const currentTheme = themes[institutionType];
+    const IconComponent = currentTheme.icon;
+
     return (
-        <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-md w-full space-y-8 bg-white/90 backdrop-blur-sm p-10 rounded-2xl shadow-2xl">
-                <div>
-                    <div className="mx-auto h-16 w-16 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full flex items-center justify-center transform transition-transform hover:scale-110">
-                        <CheckCircle className="h-10 w-10 text-white" />
-                    </div>
-                    <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                        Welcome Back
-                    </h2>
-                    <p className="mt-2 text-center text-sm text-gray-600">
-                        Sign in to access your dashboard
-                    </p>
-                </div>
+        <div className={`min-h-screen bg-gradient-to-br ${currentTheme.gradient} flex items-center justify-center p-4`}>
+            <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-8 items-center">
 
-                <div className="flex justify-center space-x-4 mb-6">
-                    <button
-                        type="button"
-                        onClick={() => setRole('admin')}
-                        className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${role === 'admin'
-                            ? 'bg-indigo-600 text-white shadow-lg scale-105'
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                            }`}
-                    >
-                        Admin
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setRole('teacher')}
-                        className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${role === 'teacher'
-                            ? 'bg-purple-600 text-white shadow-lg scale-105'
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                            }`}
-                    >
-                        Teacher
-                    </button>
-                </div>
-
-                <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-                    <input type="hidden" name="remember" value="true" />
-                    <div className="rounded-md shadow-sm -space-y-px">
-                        <div>
-                            <label htmlFor="username" className="sr-only">Username</label>
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <User className="h-5 w-5 text-gray-400" />
-                                </div>
-                                <input
-                                    id="username"
-                                    name="username"
-                                    type="text"
-                                    required
-                                    className="appearance-none rounded-none relative block w-full px-3 py-3 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                                    placeholder="Username"
-                                    value={username}
-                                    onChange={(e) => setUsername(e.target.value)}
-                                />
-                            </div>
-                        </div>
-                        <div>
-                            <label htmlFor="password" className="sr-only">Password</label>
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Lock className="h-5 w-5 text-gray-400" />
-                                </div>
-                                <input
-                                    id="password"
-                                    name="password"
-                                    type="password"
-                                    required
-                                    className="appearance-none rounded-none relative block w-full px-3 py-3 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                                    placeholder="Password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {error && (
-                        <div className="text-red-500 text-sm text-center bg-red-50 p-2 rounded">
-                            {error}
-                        </div>
-                    )}
-
-                    <div>
+                {/* Left Panel - Hero Section */}
+                <div className="hidden lg:flex flex-col items-center justify-center text-white space-y-4 p-8">
+                    {/* Institution Type Toggle */}
+                    <div className="bg-white/10 backdrop-blur-md rounded-2xl p-2 flex gap-2 mb-4">
                         <button
-                            type="submit"
-                            disabled={isLoading}
-                            className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 ${isLoading ? 'opacity-75 cursor-not-allowed' : ''}`}
+                            onClick={() => setInstitutionType('school')}
+                            className={`px-8 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center gap-2 ${institutionType === 'school'
+                                ? 'bg-white text-blue-600 shadow-lg scale-105'
+                                : 'text-white hover:bg-white/10'
+                                }`}
                         >
-                            {isLoading ? (
-                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                            ) : (
-                                <span className="absolute left-0 inset-y-0 flex items-center pl-3">
-                                    <Lock className="h-5 w-5 text-indigo-300 group-hover:text-indigo-400" aria-hidden="true" />
-                                </span>
-                            )}
-                            {isLoading ? 'Signing in...' : 'Sign in'}
+                            <BookOpen className="w-5 h-5" />
+                            School
+                        </button>
+                        <button
+                            onClick={() => setInstitutionType('college')}
+                            className={`px-8 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center gap-2 ${institutionType === 'college'
+                                ? 'bg-white text-purple-600 shadow-lg scale-105'
+                                : 'text-white hover:bg-white/10'
+                                }`}
+                        >
+                            <GraduationCap className="w-5 h-5" />
+                            College
                         </button>
                     </div>
-                </form>
+
+                    {/* Hero Content */}
+                    <div className="text-center space-y-4">
+                        <div className={`mx-auto w-24 h-24 bg-gradient-to-br ${currentTheme.cardGradient} rounded-3xl flex items-center justify-center shadow-2xl transform hover:scale-110 transition-transform duration-300`}>
+                            <IconComponent className="w-12 h-12 text-white" />
+                        </div>
+
+                        <div className="space-y-2">
+                            <h1 className="text-4xl font-bold drop-shadow-lg whitespace-nowrap">
+                                {currentTheme.title}
+                            </h1>
+                            <div className="h-16 flex items-center justify-center">
+                                <p className="text-base text-white/90 max-w-sm text-center leading-snug">
+                                    {currentTheme.subtitle}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-center gap-2 text-white/80">
+                            <Sparkles className="w-5 h-5" />
+                            <span className="text-sm">Smart • Efficient • Reliable</span>
+                            <Sparkles className="w-5 h-5" />
+                        </div>
+                    </div>
+
+                    {/* Registration CTA */}
+                    <div className="mt-6 space-y-4 w-full max-w-sm">
+                        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 text-center">
+                            <Building2 className="w-6 h-6 mx-auto mb-2 text-white/90" />
+                            <p className="text-white/90 mb-3 text-sm">
+                                Don't have an account yet?
+                            </p>
+                            <button
+                                onClick={handleRegister}
+                                className={`w-full py-2 px-4 bg-white/20 backdrop-blur-sm text-white font-bold rounded-xl border-2 border-white shadow-lg hover:bg-white/30 hover:shadow-xl transform hover:scale-105 transition-all duration-300`}
+                            >
+                                {currentTheme.registerText}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Right Panel - Login Form */}
+                <div className="w-full">
+                    {/* Mobile Institution Toggle */}
+                    <div className="lg:hidden bg-white/10 backdrop-blur-md rounded-2xl p-2 flex gap-2 mb-6">
+                        <button
+                            onClick={() => setInstitutionType('school')}
+                            className={`flex-1 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${institutionType === 'school'
+                                ? 'bg-white text-blue-600 shadow-lg'
+                                : 'text-white hover:bg-white/10'
+                                }`}
+                        >
+                            <BookOpen className="w-4 h-4" />
+                            School
+                        </button>
+                        <button
+                            onClick={() => setInstitutionType('college')}
+                            className={`flex-1 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${institutionType === 'college'
+                                ? 'bg-white text-purple-600 shadow-lg'
+                                : 'text-white hover:bg-white/10'
+                                }`}
+                        >
+                            <GraduationCap className="w-4 h-4" />
+                            College
+                        </button>
+                    </div>
+
+                    <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-8 lg:p-10">
+                        <div className="text-center mb-8">
+                            <div className={`inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br ${currentTheme.cardGradient} rounded-2xl mb-4 shadow-lg`}>
+                                <Lock className="w-8 h-8 text-white" />
+                            </div>
+                            <h2 className="text-3xl font-bold text-gray-800 mb-2">
+                                Welcome Back
+                            </h2>
+                            <p className="text-gray-600">
+                                Sign in to manage attendance
+                            </p>
+                        </div>
+
+                        {/* Role Selection */}
+                        <div className="flex gap-3 mb-6">
+                            <button
+                                type="button"
+                                onClick={() => setRole('admin')}
+                                className={`flex-1 py-3 px-4 rounded-xl font-medium transition-all duration-200 ${role === 'admin'
+                                    ? `bg-gradient-to-r ${currentTheme.buttonPrimary} text-white shadow-lg scale-105`
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    }`}
+                            >
+                                Admin
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setRole('teacher')}
+                                className={`flex-1 py-3 px-4 rounded-xl font-medium transition-all duration-200 ${role === 'teacher'
+                                    ? `bg-gradient-to-r ${currentTheme.buttonPrimary} text-white shadow-lg scale-105`
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    }`}
+                            >
+                                Teacher
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSubmit} className="space-y-5">
+                            {/* Username Field */}
+                            <div>
+                                <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Username
+                                </label>
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                        <User className="h-5 w-5 text-gray-400" />
+                                    </div>
+                                    <input
+                                        id="username"
+                                        name="username"
+                                        type="text"
+                                        required
+                                        className="block w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
+                                        placeholder="Enter your username"
+                                        value={username}
+                                        onChange={(e) => setUsername(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Password Field */}
+                            <div>
+                                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Password
+                                </label>
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                        <Lock className="h-5 w-5 text-gray-400" />
+                                    </div>
+                                    <input
+                                        id="password"
+                                        name="password"
+                                        type="password"
+                                        required
+                                        className="block w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
+                                        placeholder="Enter your password"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Error Message */}
+                            {error && (
+                                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm animate-shake">
+                                    {error}
+                                </div>
+                            )}
+
+                            {/* Loading Message */}
+                            {isLoading && (
+                                <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-xl text-sm text-center">
+                                    <div className="flex items-center justify-center gap-2">
+                                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        <span>Signing in... (Server may take 30-60s to wake up)</span>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Submit Button */}
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                className={`w-full py-4 px-6 bg-gradient-to-r ${currentTheme.buttonPrimary} text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none`}
+                            >
+                                {isLoading ? 'Signing in...' : 'Sign In'}
+                            </button>
+                        </form>
+
+                        {/* Mobile Registration CTA */}
+                        <div className="lg:hidden mt-6 pt-6 border-t border-gray-200">
+                            <p className="text-center text-gray-600 text-sm mb-3">
+                                Don't have an account?
+                            </p>
+                            <button
+                                onClick={handleRegister}
+                                className={`w-full py-3 px-6 bg-gradient-to-r ${currentTheme.buttonPrimary} text-white font-semibold rounded-xl shadow-md hover:shadow-lg transition-all duration-200`}
+                            >
+                                {currentTheme.registerText}
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );
