@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Lock, User, CheckCircle } from 'lucide-react';
+import { API_URL } from '../config';
 
 const Login = () => {
     const [username, setUsername] = useState('');
@@ -24,8 +25,8 @@ const Login = () => {
             formData.append('password', password);
 
             // Ensure we are hitting the correct endpoint. 
-            // Assuming backend is at http://localhost:8000
-            const response = await fetch('http://localhost:8000/token', {
+            // Assuming backend is at API_URL
+            const response = await fetch(`${API_URL}/token`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -41,7 +42,7 @@ const Login = () => {
 
             // We need to fetch user details to know the role, or trust the token.
             // For now, let's fetch /users/me using the token
-            const userResponse = await fetch('http://localhost:8000/users/me', {
+            const userResponse = await fetch(`${API_URL}/users/me`, {
                 headers: {
                     'Authorization': `Bearer ${data.access_token}`
                 }
@@ -87,8 +88,8 @@ const Login = () => {
                         type="button"
                         onClick={() => setRole('admin')}
                         className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${role === 'admin'
-                                ? 'bg-indigo-600 text-white shadow-lg scale-105'
-                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                            ? 'bg-indigo-600 text-white shadow-lg scale-105'
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                             }`}
                     >
                         Admin
@@ -97,8 +98,8 @@ const Login = () => {
                         type="button"
                         onClick={() => setRole('teacher')}
                         className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${role === 'teacher'
-                                ? 'bg-purple-600 text-white shadow-lg scale-105'
-                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                            ? 'bg-purple-600 text-white shadow-lg scale-105'
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                             }`}
                     >
                         Teacher

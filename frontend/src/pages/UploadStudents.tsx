@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import * as XLSX from 'xlsx';
 import { Upload, FileUp, AlertCircle, CheckCircle } from 'lucide-react';
+import { API_URL } from '../config';
 
 const UploadStudents = () => {
     const { user } = useAuth();
@@ -71,7 +72,7 @@ const UploadStudents = () => {
                 const batch = formattedData.slice(i, i + batchSize);
                 await Promise.all(batch.map(async (student: any) => {
                     try {
-                        const response = await fetch('http://localhost:8000/students/', {
+                        const response = await fetch(`${API_URL}/students/`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',

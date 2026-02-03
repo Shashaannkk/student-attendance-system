@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { UserPlus } from 'lucide-react';
+import { API_URL } from '../config';
 
 const RegisterUser = () => {
     const { user } = useAuth();
@@ -20,7 +21,7 @@ const RegisterUser = () => {
         setMessage(null);
 
         try {
-            const response = await fetch('http://localhost:8000/users/', {
+            const response = await fetch(`${API_URL}/users/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -1,16 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAttendance } from '../context/AttendanceContext';
-import { useAuth } from '../context/AuthContext';
+import { API_URL } from '../config';
 import { Check, X, Save, ArrowLeft, Loader } from 'lucide-react';
 
-interface AttendanceRecord {
-    student_id: string;
-    present: boolean;
-}
+
 
 const Attendance = () => {
-    const { user } = useAuth();
+
     const { selection, students, setStudents } = useAttendance();
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(true); // Loading students
@@ -29,7 +26,7 @@ const Attendance = () => {
             setIsLoading(true);
             try {
                 // Fetch students for the selected class
-                const response = await fetch(`http://localhost:8000/students/?class_name=${encodeURIComponent(selection.className)}&limit=100`, {
+                const response = await fetch(`${API_URL}/students/?class_name=${encodeURIComponent(selection.className)}&limit=100`, {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
                     }
@@ -90,7 +87,7 @@ const Attendance = () => {
                 subject: selection.subject
             };
 
-            const response = await fetch('http://localhost:8000/attendance/bulk', {
+            const response = await fetch(`${API_URL}/attendance/bulk`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

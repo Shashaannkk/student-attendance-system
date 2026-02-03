@@ -45,18 +45,18 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     print(f"Password received: '{form_data.password}'")
     
     if not user:
-        print("❌ User NOT FOUND in database.")
+        print("User NOT FOUND in database.")
         from database import DB_PATH
         print(f"Checking DB at: {DB_PATH}")
     else:
-        print(f"User found: {user.username}, Role: {user.role}")
+        print(f"[OK] Login successful for: {user.username}, Role: {user.role}")
         print(f"Stored Hash: {user.password_hash}")
         
         is_valid = verify_password(form_data.password, user.password_hash)
         print(f"Password Valid? {is_valid}")
         
         if not is_valid:
-            print("❌ Password verification FAILED.")
+            print("[X] Password verification FAILED.")
     
     if not user or not verify_password(form_data.password, user.password_hash):
         raise HTTPException(

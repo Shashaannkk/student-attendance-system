@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { User, ClipboardList, CreditCard } from 'lucide-react';
+import { API_URL } from '../config';
 
 const RegisterStudent = () => {
     const { user } = useAuth();
@@ -31,7 +32,7 @@ const RegisterStudent = () => {
             const rollNo = parseInt(formData.roll_no);
             if (isNaN(rollNo)) throw new Error("Roll Number must be a valid number");
 
-            const response = await fetch('http://localhost:8000/students/', {
+            const response = await fetch(`${API_URL}/students/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
