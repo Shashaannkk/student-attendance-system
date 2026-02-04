@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { User, GraduationCap, BookOpen, Building2, Mail, CheckCircle, ArrowRight, ArrowLeft, Check } from 'lucide-react';
+import { API_URL } from '../config';
 
 const Register = () => {
     const [searchParams] = useSearchParams();
@@ -94,6 +95,8 @@ const Register = () => {
         setCurrentStep(prev => Math.max(prev - 1, 1));
     };
 
+    const [orgCodeResponse, setOrgCodeResponse] = useState<string>('');
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -101,9 +104,29 @@ const Register = () => {
 
         setIsLoading(true);
         try {
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            const response = await fetch(`${API_URL}/register-organization`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    institution_name: formData.institutionName,
+                    institution_type: institutionType,
+                    email: formData.email,
+                    admin_username: formData.adminUsername,
+                    admin_password: formData.adminPassword
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Registration failed');
+            }
+
+            const data = await response.json();
+            setOrgCodeResponse(data.org_code);
             setIsSuccess(true);
-            setTimeout(() => navigate('/'), 3000);
+            // Don't auto-redirect, let user see the org code
         } catch (err: any) {
             setErrors({ submit: err.message || 'Registration failed' });
         } finally {
@@ -142,67 +165,109 @@ const Register = () => {
     if (isSuccess) {
         return (
             <div className={`min-h-screen bg-gradient-to-br ${currentTheme.gradient} flex items-center justify-center p-4`}>
-                <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-12 max-w-md w-full text-center animate-fade-in">
+                <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-12 max-w-2xl w-full text-center animate-fade-in">
                     <div className="mx-auto w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mb-6">
                         <CheckCircle className="w-12 h-12 text-white" />
                     </div>
                     <h2 className="text-3xl font-bold text-gray-800 mb-4">Registration Successful!</h2>
-                    <p className="text-gray-600 mb-6">
-                        Your {institutionType} has been registered successfully. Redirecting to login...
+                    <p className="text-gray-600 mb-8">
+                        Your {institutionType} has been registered successfully.
                     </p>
-                    <div className="flex items-center justify-center gap-2">
-                        <div className="animate-spin h-5 w-5 border-2 border-gray-300 border-t-blue-600 rounded-full"></div>
-                        <span className="text-sm text-gray-500">Redirecting...</span>
+
+                    {/* Organization Code Display */}
+                    <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-2xl p-6 mb-6">
+                        <p className="text-sm font-semibold text-gray-700 mb-2">Your Organization Code</p>
+                        <div className="bg-white rounded-xl p-4 mb-3">
+                            <p className="text-3xl font-bold text-blue-600 tracking-wider font-mono">{orgCodeResponse}</p>
+                        </div>
+                        <button
+                            onClick={() => {
+                                navigator.clipboard.writeText(orgCodeResponse);
+                                alert('Organization code copied to clipboard!');
+                            }}
+                            className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                        >
+                            📋 Click to copy
+                        </button>
                     </div>
+
+                    {/* Instructions */}
+                    <div className="bg-yellow-50 border-2 border-yellow-200 rounded-2xl p-6 mb-6 text-left">
+                        <p className="font-semibold text-yellow-900 mb-3">⚠️ Important - Save This Information:</p>
+                        <ul className="text-sm text-yellow-800 space-y-2">
+                            <li>✓ An email has been sent to <strong>{formData.email}</strong></li>
+                            <li>✓ Keep your organization code secure</li>
+                            <li>✓ You'll need it every time you login</li>
+                            <li>✓ Share it only with authorized staff</li>
+                        </ul>
+                    </div>
+
+                    {/* Login Instructions */}
+                    <div className="bg-gray-50 rounded-2xl p-6 mb-6 text-left">
+                        <p className="font-semibold text-gray-900 mb-3">How to Login:</p>
+                        <ol className="text-sm text-gray-700 space-y-2 list-decimal list-inside">
+                            <li>Go to the login page</li>
+                            <li>Enter Organization Code: <span className="font-mono font-bold">{orgCodeResponse}</span></li>
+                            <li>Enter Username: <span className="font-bold">{formData.adminUsername}</span></li>
+                            <li>Enter your password</li>
+                        </ol>
+                    </div>
+
+                    <button
+                        onClick={() => navigate('/')}
+                        className={`w-full py-4 px-6 bg-gradient-to-r ${currentTheme.buttonPrimary} text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200`}
+                    >
+                        Go to Login
+                    </button>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className={`min-h-screen bg-gradient-to-br ${currentTheme.gradient} flex items-center justify-center p-4 py-8`}>
-            <div className="w-full max-w-4xl">
+        <div className={`min-h-screen bg-gradient-to-br ${currentTheme.gradient} flex items-center justify-center p-2 sm:p-4 lg:p-6 py-4 sm:py-8`}>
+            <div className="w-full max-w-4xl px-2 sm:px-0">
                 {/* Header */}
-                <div className="text-center mb-8">
-                    <div className={`inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br ${currentTheme.cardGradient} rounded-2xl mb-4 shadow-lg`}>
-                        <IconComponent className="w-8 h-8 text-white" />
+                <div className="text-center mb-4 sm:mb-6 lg:mb-8">
+                    <div className={`inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-gradient-to-br ${currentTheme.cardGradient} rounded-xl sm:rounded-2xl mb-3 sm:mb-4 shadow-lg`}>
+                        <IconComponent className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-white" />
                     </div>
-                    <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-lg">{currentTheme.title}</h1>
-                    <p className="text-white/90 text-lg">{currentTheme.subtitle}</p>
+                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1 sm:mb-2 drop-shadow-lg">{currentTheme.title}</h1>
+                    <p className="text-white/90 text-sm sm:text-base lg:text-lg">{currentTheme.subtitle}</p>
                 </div>
 
                 {/* Institution Type Toggle */}
-                <div className="bg-white/10 backdrop-blur-md rounded-2xl p-2 flex gap-2 mb-8 max-w-md mx-auto">
+                <div className="bg-white/10 backdrop-blur-md rounded-xl sm:rounded-2xl p-1.5 sm:p-2 flex gap-1.5 sm:gap-2 mb-4 sm:mb-6 lg:mb-8 max-w-md mx-auto">
                     <button
                         onClick={() => setInstitutionType('school')}
-                        className={`flex-1 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${institutionType === 'school'
+                        className={`flex-1 py-2 sm:py-2.5 lg:py-3 rounded-lg sm:rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm lg:text-base ${institutionType === 'school'
                             ? 'bg-white text-blue-600 shadow-lg scale-105'
                             : 'text-white hover:bg-white/10'
                             }`}
                     >
-                        <BookOpen className="w-5 h-5" />
+                        <BookOpen className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5" />
                         School
                     </button>
                     <button
                         onClick={() => setInstitutionType('college')}
-                        className={`flex-1 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${institutionType === 'college'
+                        className={`flex-1 py-2 sm:py-2.5 lg:py-3 rounded-lg sm:rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm lg:text-base ${institutionType === 'college'
                             ? 'bg-white text-purple-600 shadow-lg scale-105'
                             : 'text-white hover:bg-white/10'
                             }`}
                     >
-                        <GraduationCap className="w-5 h-5" />
+                        <GraduationCap className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5" />
                         College
                     </button>
                 </div>
 
                 {/* Progress Steps */}
-                <div className="mb-8">
-                    <div className="flex items-center justify-center gap-4">
+                <div className="mb-6 sm:mb-8">
+                    <div className="flex items-center justify-center gap-2 sm:gap-4">
                         {steps.map((step, index) => (
                             <React.Fragment key={step.number}>
                                 <div className="flex flex-col items-center">
                                     <div
-                                        className={`w-12 h-12 rounded-full flex items-center justify-center font-bold transition-all duration-300 ${currentStep > step.number
+                                        className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-bold transition-all duration-300 ${currentStep > step.number
                                             ? `bg-gradient-to-br ${currentTheme.cardGradient} text-white shadow-lg`
                                             : currentStep === step.number
                                                 ? 'bg-white text-gray-800 shadow-lg scale-110'
@@ -210,17 +275,17 @@ const Register = () => {
                                             }`}
                                     >
                                         {currentStep > step.number ? (
-                                            <Check className="w-6 h-6" />
+                                            <Check className="w-5 h-5 sm:w-6 sm:h-6" />
                                         ) : (
-                                            <step.icon className="w-6 h-6" />
+                                            <step.icon className="w-5 h-5 sm:w-6 sm:h-6" />
                                         )}
                                     </div>
-                                    <span className={`text-xs mt-2 font-medium ${currentStep >= step.number ? 'text-white' : 'text-white/60'}`}>
+                                    <span className={`text-xs mt-1 sm:mt-2 font-medium ${currentStep >= step.number ? 'text-white' : 'text-white/60'} hidden sm:block`}>
                                         {step.title}
                                     </span>
                                 </div>
                                 {index < steps.length - 1 && (
-                                    <div className={`h-0.5 w-16 transition-all duration-300 ${currentStep > step.number ? `bg-gradient-to-r ${currentTheme.buttonPrimary}` : 'bg-white/20'}`} />
+                                    <div className={`h-0.5 w-8 sm:w-16 transition-all duration-300 ${currentStep > step.number ? `bg-gradient-to-r ${currentTheme.buttonPrimary}` : 'bg-white/20'}`} />
                                 )}
                             </React.Fragment>
                         ))}
@@ -228,29 +293,29 @@ const Register = () => {
                 </div>
 
                 {/* Form Card */}
-                <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-8 max-w-2xl mx-auto">
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="bg-white/95 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-6 lg:p-8 max-w-2xl mx-auto">
+                    <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
                         {/* Step 1: Institution Details */}
                         {currentStep === 1 && (
-                            <div className="space-y-5 animate-fade-in">
-                                <h3 className="text-2xl font-bold text-gray-800 mb-6">Institution Details</h3>
+                            <div className="space-y-4 sm:space-y-5 animate-fade-in">
+                                <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6">Institution Details</h3>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
                                     <div className="md:col-span-2">
-                                        <label className="block text-sm font-semibold text-gray-700 mb-2">Institution Name *</label>
+                                        <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">Institution Name *</label>
                                         <input
                                             name="institutionName"
                                             type="text"
                                             value={formData.institutionName}
                                             onChange={handleInputChange}
-                                            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-gray-900"
+                                            className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-gray-900 text-sm sm:text-base"
                                             placeholder="Enter institution name"
                                         />
                                         {errors.institutionName && <p className="text-red-500 text-xs mt-1">{errors.institutionName}</p>}
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-2">Institution Code *</label>
+                                        <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">Institution Code *</label>
                                         <input
                                             name="institutionCode"
                                             type="text"

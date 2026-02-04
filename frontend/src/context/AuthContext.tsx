@@ -3,6 +3,7 @@ import { createContext, useState, useContext, useEffect, ReactNode } from 'react
 interface User {
     username: string;
     role: 'admin' | 'teacher';
+    institution_type?: 'school' | 'college';
 }
 
 interface AuthContextType {

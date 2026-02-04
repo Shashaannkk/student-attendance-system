@@ -7,6 +7,10 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "attendance_sys.db")
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DB_PATH}")
 
+# Fix for Render/Heroku which use 'postgres://' but SQLAlchemy requires 'postgresql://'
+if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
 # Create engine
 # echo=True prints SQL queries to console (useful for debugging)
 engine = create_engine(DATABASE_URL, echo=True)

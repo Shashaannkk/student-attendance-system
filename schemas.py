@@ -38,3 +38,19 @@ class BulkAttendanceCreate(BaseModel):
     subject: str
     date: date
     items: List[BulkAttendanceItem]
+
+# Organization Registration Schemas
+class OrganizationRegister(BaseModel):
+    institution_name: str
+    institution_type: str  # 'school' or 'college'
+    email: str
+    admin_username: str
+    admin_password: str
+
+class OrganizationResponse(BaseModel):
+    org_code: str
+    institution_name: str
+    institution_type: str
+    email: str
+    admin_username: str
+    message: str
