@@ -88,11 +88,16 @@ async def login_for_access_token(
     
     print(f"[OK] User found: {user.username}, Role: {user.role}")
     print(f"[DEBUG] Stored password hash: {user.password_hash[:20]}...")
+    print(f"[DEBUG] Password to verify: '{password}' (length: {len(password)})")
     print(f"[DEBUG] Attempting to verify password...")
     
     # Step 3: Verify password
     if not verify_password(password, user.password_hash):
         print(f"[X] Password verification failed for user: {username}")
+        print(f"[DEBUG] This could mean:")
+        print(f"[DEBUG]   - Password is incorrect")
+        print(f"[DEBUG]   - Hash in database is corrupted")
+        print(f"[DEBUG]   - Encoding issue")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid password",
@@ -258,6 +263,7 @@ def register_organization(
     
     session.commit()
     session.refresh(organization)
+    session.refresh(admin_user)  # Ensure user is properly persisted
     
     # Send email with credentials
     send_org_code_email(

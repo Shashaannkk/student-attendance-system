@@ -30,18 +30,33 @@ def hash_password(password: str) -> str:
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify password against stored bcrypt hash."""
-    # Ensure password is a string
-    if not isinstance(plain_password, str):
-        plain_password = str(plain_password)
-    
-    # Encode to bytes and truncate to 72 bytes to match hashing behavior
-    password_bytes = plain_password.encode('utf-8')[:72]
-    
-    # Encode the stored hash to bytes
-    hashed_bytes = hashed_password.encode('utf-8')
-    
-    # Verify
-    return bcrypt.checkpw(password_bytes, hashed_bytes)
+    try:
+        # Ensure password is a string
+        if not isinstance(plain_password, str):
+            plain_password = str(plain_password)
+        
+        # Ensure hash is a string
+        if not isinstance(hashed_password, str):
+            hashed_password = str(hashed_password)
+        
+        # Encode to bytes and truncate to 72 bytes to match hashing behavior
+        password_bytes = plain_password.encode('utf-8')[:72]
+        
+        # Encode the stored hash to bytes
+        hashed_bytes = hashed_password.encode('utf-8')
+        
+        # Verify
+        result = bcrypt.checkpw(password_bytes, hashed_bytes)
+        
+        # Debug logging (can be removed in production)
+        if not result:
+            print(f"[DEBUG] Password verification failed")
+            print(f"[DEBUG] Password length: {len(plain_password)}, Hash starts with: {hashed_password[:29]}")
+        
+        return result
+    except Exception as e:
+        print(f"[ERROR] Password verification exception: {type(e).__name__}: {e}")
+        return False
 
 def get_password_hash(password: str) -> str:
     """Alias for hash_password."""
