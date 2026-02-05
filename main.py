@@ -22,7 +22,16 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # CORS Configuration
 # Allow all origins for simplicity in this demo, but restrict in production
-origins = os.getenv("ALLOWED_ORIGINS", "*").split(",")
+origins_str = os.getenv("ALLOWED_ORIGINS", "*")
+
+# Handle wildcard or specific origins
+if origins_str == "*":
+    origins = ["*"]
+else:
+    # Split by comma and strip whitespace
+    origins = [origin.strip() for origin in origins_str.split(",")]
+
+print(f"🔒 CORS allowed origins: {origins}")
 
 app.add_middleware(
     CORSMiddleware,

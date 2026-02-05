@@ -3,12 +3,15 @@
 
 export const getApiUrl = () => {
     // Check for environment variable first (Vite exposes these with VITE_ prefix)
-    if (import.meta.env.VITE_API_URL) {
-        return import.meta.env.VITE_API_URL;
+    let apiUrl = import.meta.env.VITE_API_URL;
+
+    if (!apiUrl) {
+        // Fallback to localhost for local development
+        apiUrl = "http://localhost:8000";
     }
 
-    // Fallback to localhost for local development
-    return "http://localhost:8000";
+    // Remove trailing slash to prevent double slashes in URLs
+    return apiUrl.replace(/\/+$/, '');
 };
 
 export const API_URL = getApiUrl();
