@@ -11,6 +11,7 @@ import RegisterUser from './pages/RegisterUser';
 import RegisterStudent from './pages/RegisterStudent';
 import UploadStudents from './pages/UploadStudents';
 import Settings from './pages/Settings';
+import AdminDashboard from './pages/AdminDashboard';
 
 const ProtectedRoute = () => {
     const { isAuthenticated, isLoading } = useAuth();
@@ -47,6 +48,7 @@ function App() {
                             <Route path="/register-user" element={<RegisterUser />} />
                             <Route path="/register-student" element={<RegisterStudent />} />
                             <Route path="/upload-students" element={<UploadStudents />} />
+                            <Route path="/admin" element={<AdminDashboard />} />
                             <Route path="/" element={<Navigate to="/dashboard" replace />} />
                         </Route>
                     </Routes>

@@ -31,7 +31,7 @@ else:
     # Split by comma and strip whitespace
     origins = [origin.strip() for origin in origins_str.split(",")]
 
-print(f"🔒 CORS allowed origins: {origins}")
+print(f"[CORS] Allowed origins: {origins}")
 
 app.add_middleware(
     CORSMiddleware,

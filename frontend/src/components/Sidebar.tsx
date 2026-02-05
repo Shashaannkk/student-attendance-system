@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Users, Calendar, BarChart3, Settings, LogOut, BookOpen, GraduationCap } from 'lucide-react';
+import { LayoutDashboard, Users, Calendar, BarChart3, Settings, LogOut, BookOpen, GraduationCap, Shield } from 'lucide-react';
 
 const Sidebar = () => {
     const { user, logout } = useAuth();
@@ -81,6 +81,33 @@ const Sidebar = () => {
                         </Link>
                     );
                 })}
+
+                {/* Admin-only link */}
+                {user?.role === 'admin' && (
+                    <>
+                        <div className="my-4 border-t border-gray-200" />
+                        <Link
+                            to="/admin"
+                            className={`
+                                flex items-center gap-3 px-4 py-3 rounded-xl
+                                transition-all duration-200 ease-in-out
+                                group relative
+                                ${isActive('/admin')
+                                    ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg shadow-red-200 scale-105'
+                                    : 'text-gray-600 hover:bg-red-50 hover:text-gray-900 hover:scale-105 hover:shadow-md'
+                                }
+                            `}
+                        >
+                            <Shield className={`w-5 h-5 ${isActive('/admin') ? 'text-white' : 'text-gray-500 group-hover:text-red-500'} transition-colors`} />
+                            <span className="font-medium">Admin Panel</span>
+
+                            {/* Hover effect indicator */}
+                            {!isActive('/admin') && (
+                                <div className="absolute left-0 w-1 h-0 bg-gradient-to-b from-red-500 to-orange-500 rounded-r-full group-hover:h-full transition-all duration-200" />
+                            )}
+                        </Link>
+                    </>
+                )}
             </nav>
 
             {/* Logout Button */}

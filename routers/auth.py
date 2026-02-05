@@ -131,6 +131,88 @@ async def read_users_me(current_user: User = Depends(get_current_user), session:
         "profile_picture_url": current_user.profile_picture_url
     }
 
+@router.post("/users/me/profile-picture")
+async def upload_profile_picture(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """Upload profile picture for current user"""
+    print("\n" + "="*60)
+    print("📸 PROFILE PICTURE UPLOAD ENDPOINT CALLED")
+    print("="*60)
+    print(f"User: {current_user.username} (ID: {current_user.id})")
+    print(f"Filename: {file.filename}")
+    print(f"Content Type: {file.content_type}")
+    
+    try:
+        # Validate file type
+        if not file.content_type or not file.content_type.startswith('image/'):
+            print(f"[X] Invalid file type: {file.content_type}")
+            raise HTTPException(status_code=400, detail="File must be an image")
+        
+        print(f"[OK] File type validated: {file.content_type}")
+        
+        # Validate file size (2MB max)
+        contents = await file.read()
+        file_size = len(contents)
+        print(f"File size: {file_size} bytes ({file_size / 1024:.2f} KB)")
+        
+        if file_size > 2 * 1024 * 1024:
+            print(f"[X] File too large: {file_size} bytes")
+            raise HTTPException(status_code=400, detail="File size must be less than 2MB")
+        
+        print(f"[OK] File size validated")
+        
+        # Create uploads directory if it doesn't exist
+        uploads_dir = Path("uploads")
+        uploads_dir.mkdir(exist_ok=True)
+        print(f"[OK] Uploads directory ready: {uploads_dir.absolute()}")
+        
+        # Generate unique filename
+        file_extension = Path(file.filename or "image.jpg").suffix
+        unique_filename = f"profile_{current_user.id}_{int(time.time())}{file_extension}"
+        file_path = uploads_dir / unique_filename
+        print(f"Target file path: {file_path.absolute()}")
+        
+        # Save file
+        with open(file_path, "wb") as f:
+            f.write(contents)
+        print(f"[OK] File saved successfully: {unique_filename}")
+        
+        # Update user's profile picture URL
+        old_profile_pic = current_user.profile_picture_url
+        current_user.profile_picture_url = f"/uploads/{unique_filename}"
+        session.add(current_user)
+        session.commit()
+        session.refresh(current_user)
+        print(f"[OK] Database updated")
+        print(f"Old URL: {old_profile_pic}")
+        print(f"New URL: {current_user.profile_picture_url}")
+        print("="*60)
+        print("✅ UPLOAD COMPLETED SUCCESSFULLY")
+        print("="*60 + "\n")
+        
+        return {
+            "profile_picture_url": current_user.profile_picture_url,
+            "message": "Profile picture uploaded successfully"
+        }
+    
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
+    except Exception as e:
+        print(f"\n[ERROR] Unexpected error during upload:")
+        print(f"Error type: {type(e).__name__}")
+        print(f"Error message: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        print("="*60 + "\n")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Upload failed: {str(e)}"
+        )
+
 @router.post("/register-organization", response_model=OrganizationResponse)
 def register_organization(
     org_data: OrganizationRegister,
@@ -234,3 +316,72 @@ def register_user(
     session.refresh(new_user)
     
     return {"username": new_user.username, "role": new_user.role, "org_code": new_user.org_code}
+
+# ============================================================================
+# ADMIN-ONLY ENDPOINTS (Hidden from public API docs)
+# ============================================================================
+
+@router.get("/admin/organizations", include_in_schema=False)
+async def list_all_organizations(
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """
+    List all registered organizations (Admin only, hidden from public API).
+    Returns organization details including codes, names, and registration dates.
+    """
+    # Verify admin access
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+    
+    # Get all organizations ordered by most recent first
+    statement = select(Organization).order_by(Organization.created_at.desc())
+    organizations = session.exec(statement).all()
+    
+    return [{
+        "org_code": org.org_code,
+        "institution_name": org.institution_name,
+        "institution_type": org.institution_type,
+        "email": org.email,
+        "created_at": org.created_at.isoformat()
+    } for org in organizations]
+
+@router.get("/admin/users", include_in_schema=False)
+async def list_all_users(
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """
+    List all users across all organizations (Admin only, hidden from public API).
+    Returns user details with their organization information.
+    """
+    # Verify admin access
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+    
+    # Get all users with their organization details
+    statement = select(User).order_by(User.org_code, User.username)
+    users = session.exec(statement).all()
+    
+    result = []
+    for user in users:
+        # Get organization info
+        org_statement = select(Organization).where(Organization.org_code == user.org_code)
+        org = session.exec(org_statement).first()
+        
+        result.append({
+            "username": user.username,
+            "org_code": user.org_code,
+            "role": user.role,
+            "institution_name": org.institution_name if org else "Unknown",
+            "institution_type": org.institution_type if org else "Unknown",
+            "profile_picture_url": user.profile_picture_url
+        })
+    
+    return result

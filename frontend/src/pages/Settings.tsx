@@ -43,13 +43,18 @@ const Settings = () => {
         const file = event.target.files?.[0];
         if (!file) return;
 
+        console.log('📸 Profile picture upload started');
+        console.log('File:', file.name, 'Size:', file.size, 'Type:', file.type);
+
         // Basic validation
         if (!file.type.startsWith('image/')) {
+            console.error('❌ Invalid file type:', file.type);
             alert('Please upload an image file');
             return;
         }
 
         if (file.size > 2 * 1024 * 1024) { // 2MB limit
+            console.error('❌ File too large:', file.size, 'bytes');
             alert('File size must be less than 2MB');
             return;
         }
@@ -60,7 +65,13 @@ const Settings = () => {
             formData.append('file', file);
 
             const token = localStorage.getItem('token');
-            const response = await fetch(`${getApiUrl()}/users/me/profile-picture`, {
+            const apiUrl = getApiUrl();
+            const uploadUrl = `${apiUrl}/users/me/profile-picture`;
+
+            console.log('📤 Uploading to:', uploadUrl);
+            console.log('Token present:', !!token);
+
+            const response = await fetch(uploadUrl, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -68,21 +79,29 @@ const Settings = () => {
                 body: formData
             });
 
+            console.log('📥 Response status:', response.status, response.statusText);
+
             if (!response.ok) {
-                throw new Error('Upload failed');
+                const errorData = await response.json().catch(() => ({ detail: 'Upload failed' }));
+                console.error('❌ Upload failed:', errorData);
+                throw new Error(errorData.detail || 'Upload failed');
             }
 
             const data = await response.json();
+            console.log('✅ Upload successful:', data);
 
             // Update user context with new profile picture
             if (user && token) {
                 const updatedUser = { ...user, profile_picture_url: data.profile_picture_url };
                 login(token, updatedUser); // This updates context and localStorage
+                console.log('✅ User context updated with new profile picture');
+                alert('Profile picture uploaded successfully!');
             }
 
         } catch (error) {
-            console.error('Error uploading profile picture:', error);
-            alert('Failed to upload profile picture. Please try again.');
+            console.error('❌ Error uploading profile picture:', error);
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+            alert(`Failed to upload profile picture: ${errorMessage}`);
         } finally {
             setUploading(false);
         }
