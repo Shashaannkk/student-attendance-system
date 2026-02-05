@@ -1,15 +1,27 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from database import create_db_and_tables
-from routers import auth, students, attendance
+from routers import auth, attendance, students
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
-app = FastAPI(title="Student Attendance System", version="2.0")
+app = FastAPI(
+    title="Student Attendance System API",
+    description="Backend API for managing student attendance",
+    version="1.0.0"
+)
 
-# CORS (Cross-Origin Resource Sharing)
+# Ensure uploads directory exists
+os.makedirs("uploads", exist_ok=True)
+
+# Mount static files for uploads
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
+# CORS Configuration
+# Allow all origins for simplicity in this demo, but restrict in production
 origins = os.getenv("ALLOWED_ORIGINS", "*").split(",")
 
 app.add_middleware(

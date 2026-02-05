@@ -1,7 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Form
+from fastapi import APIRouter, Depends, HTTPException, status, Form, UploadFile, File
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlmodel import Session, select
 from datetime import timedelta
+from typing import Annotated
+import shutil
+from pathlib import Path
+import os
+import time
 
 from database import get_session
 from models import User, Organization
@@ -103,7 +108,8 @@ async def login_for_access_token(
             "sub": user.username,
             "role": user.role,
             "org_code": user.org_code,
-            "institution_type": organization.institution_type
+            "institution_type": organization.institution_type,
+            "institution_name": organization.institution_name
         },
         expires_delta=access_token_expires
     )
@@ -120,7 +126,9 @@ async def read_users_me(current_user: User = Depends(get_current_user), session:
         "username": current_user.username,
         "role": current_user.role,
         "org_code": current_user.org_code,
-        "institution_type": organization.institution_type if organization else None
+        "institution_type": organization.institution_type if organization else None,
+        "institution_name": organization.institution_name if organization else None,
+        "profile_picture_url": current_user.profile_picture_url
     }
 
 @router.post("/register-organization", response_model=OrganizationResponse)

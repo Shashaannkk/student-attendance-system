@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Users, UserCheck, UserX, Clock } from 'lucide-react';
+import Header from '../components/Header';
 import StatCard from '../components/StatCard';
 import WeeklyChart from '../components/WeeklyChart';
 import DonutChart from '../components/DonutChart';
@@ -15,10 +16,16 @@ const Dashboard = () => {
         school: {
             gradient: 'from-blue-500 via-cyan-500 to-teal-400',
             textGradient: 'from-blue-600 to-cyan-600',
+            stats: {
+                students: { bg: 'bg-blue-100', text: 'text-blue-600' }
+            }
         },
         college: {
             gradient: 'from-indigo-600 via-purple-600 to-pink-500',
             textGradient: 'from-indigo-600 to-purple-600',
+            stats: {
+                students: { bg: 'bg-indigo-100', text: 'text-indigo-600' }
+            }
         }
     };
 
@@ -52,12 +59,14 @@ const Dashboard = () => {
 
     return (
         <div className="min-h-screen bg-gray-50">
+            <Header />
+
             {/* Welcome Banner */}
             <div className={`bg-gradient-to-r ${currentTheme.gradient} rounded-3xl p-8 mb-6 shadow-lg`}>
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-2">
-                            Welcome Back, {user?.username}! 👋
+                            Welcome to {user?.institution_name || 'Your Institution'}! 👋
                         </h1>
                         <p className="text-white/90 text-lg">
                             Here's what's happening at your {institutionType} today
@@ -76,8 +85,8 @@ const Dashboard = () => {
                     title="Total Students"
                     value={stats.totalStudents}
                     icon={Users}
-                    iconBgColor="bg-blue-100"
-                    iconColor="text-blue-600"
+                    iconBgColor={currentTheme.stats.students.bg}
+                    iconColor={currentTheme.stats.students.text}
                     trend={stats.trends.total}
                     trendDirection="up"
                 />

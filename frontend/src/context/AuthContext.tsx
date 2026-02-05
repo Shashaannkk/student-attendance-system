@@ -4,6 +4,9 @@ interface User {
     username: string;
     role: 'admin' | 'teacher';
     institution_type?: 'school' | 'college';
+    institution_name?: string;
+    org_code?: string;
+    profile_picture_url?: string;
 }
 
 interface AuthContextType {

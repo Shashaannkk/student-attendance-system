@@ -16,6 +16,7 @@ class User(SQLModel, table=True):
     username: str = Field(index=True)
     password_hash: str
     role: str  # 'admin' or 'teacher'
+    profile_picture_url: Optional[str] = None
     
     # Note: username is unique per organization, not globally
     # Composite unique constraint: (org_code, username) would be ideal

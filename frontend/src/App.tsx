@@ -10,6 +10,7 @@ import Attendance from './pages/Attendance';
 import RegisterUser from './pages/RegisterUser';
 import RegisterStudent from './pages/RegisterStudent';
 import UploadStudents from './pages/UploadStudents';
+import Settings from './pages/Settings';
 
 const ProtectedRoute = () => {
     const { isAuthenticated, isLoading } = useAuth();
@@ -42,6 +43,7 @@ function App() {
                         <Route element={<ProtectedRoute />}>
                             <Route path="/dashboard" element={<Dashboard />} />
                             <Route path="/attendance" element={<Attendance />} />
+                            <Route path="/settings" element={<Settings />} />
                             <Route path="/register-user" element={<RegisterUser />} />
                             <Route path="/register-student" element={<RegisterStudent />} />
                             <Route path="/upload-students" element={<UploadStudents />} />

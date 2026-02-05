@@ -62,21 +62,137 @@ def send_org_code_email(email: str, org_code: str, institution_name: str, admin_
     smtp_password = os.getenv('SMTP_PASSWORD', '')
     email_from = os.getenv('EMAIL_FROM', 'noreply@attendance-system.com')
     
-    # Create HTML email
+    # Create HTML email with mobile-responsive design
     html_body = f"""
     <!DOCTYPE html>
     <html>
     <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <style>
-            body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
-            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-            .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
-            .content {{ background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }}
-            .credentials {{ background: white; padding: 20px; border-left: 4px solid #667eea; margin: 20px 0; }}
-            .org-code {{ font-size: 24px; font-weight: bold; color: #667eea; font-family: monospace; }}
-            .button {{ display: inline-block; padding: 12px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }}
-            .warning {{ background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; }}
-            .footer {{ text-align: center; color: #666; font-size: 12px; margin-top: 30px; }}
+            body {{ 
+                font-family: Arial, sans-serif; 
+                line-height: 1.6; 
+                color: #333; 
+                margin: 0;
+                padding: 0;
+                -webkit-text-size-adjust: 100%;
+                -ms-text-size-adjust: 100%;
+            }}
+            .container {{ 
+                max-width: 600px; 
+                margin: 0 auto; 
+                padding: 20px; 
+                width: 100% !important;
+            }}
+            .header {{ 
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                color: white; 
+                padding: 30px 20px; 
+                text-align: center; 
+                border-radius: 10px 10px 0 0; 
+            }}
+            .header h1 {{
+                margin: 0 0 10px 0;
+                font-size: 24px;
+            }}
+            .header p {{
+                margin: 0;
+                font-size: 14px;
+            }}
+            .content {{ 
+                background: #f9f9f9; 
+                padding: 30px 20px; 
+                border-radius: 0 0 10px 10px; 
+            }}
+            .content h2 {{
+                font-size: 20px;
+                margin-top: 0;
+            }}
+            .content h3 {{
+                font-size: 18px;
+                margin-top: 20px;
+            }}
+            .credentials {{ 
+                background: white; 
+                padding: 20px; 
+                border-left: 4px solid #667eea; 
+                margin: 20px 0;
+                word-wrap: break-word;
+            }}
+            .org-code {{ 
+                font-size: 20px; 
+                font-weight: bold; 
+                color: #667eea; 
+                font-family: 'Courier New', monospace;
+                word-break: break-all;
+                display: block;
+                margin-top: 5px;
+            }}
+            .warning {{ 
+                background: #fff3cd; 
+                border-left: 4px solid #ffc107; 
+                padding: 15px; 
+                margin: 20px 0; 
+            }}
+            .warning ul {{
+                margin: 10px 0;
+                padding-left: 20px;
+            }}
+            .footer {{ 
+                text-align: center; 
+                color: #666; 
+                font-size: 12px; 
+                margin-top: 30px; 
+            }}
+            code {{
+                background: #e9ecef;
+                padding: 2px 6px;
+                border-radius: 3px;
+                font-family: 'Courier New', monospace;
+                font-size: 14px;
+                word-break: break-all;
+            }}
+            ol, ul {{
+                padding-left: 20px;
+            }}
+            
+            /* Mobile-specific styles */
+            @media only screen and (max-width: 600px) {{
+                .container {{
+                    padding: 10px !important;
+                }}
+                .header {{
+                    padding: 20px 15px !important;
+                }}
+                .header h1 {{
+                    font-size: 20px !important;
+                }}
+                .header p {{
+                    font-size: 13px !important;
+                }}
+                .content {{
+                    padding: 20px 15px !important;
+                }}
+                .content h2 {{
+                    font-size: 18px !important;
+                }}
+                .content h3 {{
+                    font-size: 16px !important;
+                }}
+                .credentials {{
+                    padding: 15px !important;
+                }}
+                .org-code {{
+                    font-size: 16px !important;
+                }}
+                .warning {{
+                    padding: 12px !important;
+                }}
+                code {{
+                    font-size: 12px !important;
+                }}
+            }}
         </style>
     </head>
     <body>
