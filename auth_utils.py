@@ -23,16 +23,11 @@ def hash_password(password: str):
     if not isinstance(password, str):
         password = str(password)
     
-    # Encode to bytes to check length
-    password_bytes = password.encode('utf-8')
+    # Encode to bytes and truncate to 72 bytes for bcrypt compatibility
+    password_bytes = password.encode('utf-8')[:72]
     
-    # Bcrypt has a 72-byte limit, truncate at byte level if necessary
-    if len(password_bytes) > 72:
-        # Truncate bytes, then decode back to string
-        password = password_bytes[:72].decode('utf-8', errors='ignore')
-    
-    # Hash the string (passlib handles the encoding internally)
-    return pwd_context.hash(password)
+    # Hash the bytes directly to avoid passlib's internal encoding issues with Python 3.13
+    return pwd_context.hash(password_bytes)
 
 def verify_password(plain_password: str, hashed_password: str):
     """Verify password against stored bcrypt hash."""
@@ -40,16 +35,11 @@ def verify_password(plain_password: str, hashed_password: str):
     if not isinstance(plain_password, str):
         plain_password = str(plain_password)
     
-    # Encode to bytes to check length
-    password_bytes = plain_password.encode('utf-8')
+    # Encode to bytes and truncate to 72 bytes to match hashing behavior
+    password_bytes = plain_password.encode('utf-8')[:72]
     
-    # Truncate to match hashing behavior
-    if len(password_bytes) > 72:
-        # Truncate bytes, then decode back to string
-        plain_password = password_bytes[:72].decode('utf-8', errors='ignore')
-    
-    # Verify the string (passlib handles the encoding internally)
-    return pwd_context.verify(plain_password, hashed_password)
+    # Verify the bytes directly
+    return pwd_context.verify(password_bytes, hashed_password)
 
 def get_password_hash(password: str):
     """Alias for hash_password."""
