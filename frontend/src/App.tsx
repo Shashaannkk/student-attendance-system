@@ -12,6 +12,7 @@ import RegisterStudent from './pages/RegisterStudent';
 import UploadStudents from './pages/UploadStudents';
 import Settings from './pages/Settings';
 import AdminDashboard from './pages/AdminDashboard';
+import TeacherSelfRegister from './pages/TeacherSelfRegister';
 
 const ProtectedRoute = () => {
     const { isAuthenticated, isLoading } = useAuth();
@@ -39,6 +40,7 @@ function App() {
                     <Routes>
                         <Route path="/login" element={<Login />} />
                         <Route path="/register" element={<Register />} />
+                        <Route path="/teacher-invite/:token" element={<TeacherSelfRegister />} />
 
                         {/* Protected Routes */}
                         <Route element={<ProtectedRoute />}>

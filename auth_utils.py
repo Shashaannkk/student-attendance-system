@@ -72,3 +72,9 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
+import secrets
+
+def generate_invite_token() -> str:
+    """Generate a secure random token for teacher invites."""
+    return secrets.token_urlsafe(32)  # 32 bytes = 43 characters

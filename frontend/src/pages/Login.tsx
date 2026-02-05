@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Lock, User, GraduationCap, BookOpen, Building2, Sparkles } from 'lucide-react';
+import { Lock, User, GraduationCap, BookOpen, Building2, Sparkles, Eye, EyeOff } from 'lucide-react';
 import { API_URL } from '../config';
 
 const Login = () => {
@@ -9,6 +9,7 @@ const Login = () => {
     const [orgCode, setOrgCode] = useState('');
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [role, setRole] = useState<'admin' | 'teacher'>('teacher');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -301,13 +302,24 @@ const Login = () => {
                                     <input
                                         id="password"
                                         name="password"
-                                        type="password"
+                                        type={showPassword ? "text" : "password"}
                                         required
-                                        className="block w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400 text-sm sm:text-base"
+                                        className="block w-full pl-10 sm:pl-12 pr-10 sm:pr-12 py-2.5 sm:py-3 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400 text-sm sm:text-base"
                                         placeholder="Enter your password"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                     />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute inset-y-0 right-0 pr-3 sm:pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                                    >
+                                        {showPassword ? (
+                                            <EyeOff className="h-4 w-4 sm:h-5 sm:w-5" />
+                                        ) : (
+                                            <Eye className="h-4 w-4 sm:h-5 sm:w-5" />
+                                        )}
+                                    </button>
                                 </div>
                             </div>
 

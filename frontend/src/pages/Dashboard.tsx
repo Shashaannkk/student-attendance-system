@@ -61,26 +61,26 @@ const Dashboard = () => {
         <div className="min-h-screen bg-gray-50">
             <Header />
 
-            {/* Welcome Banner */}
-            <div className={`bg-gradient-to-r ${currentTheme.gradient} rounded-3xl p-8 mb-6 shadow-lg`}>
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-2">
+            {/* Welcome Banner - Mobile Responsive */}
+            <div className={`bg-gradient-to-r ${currentTheme.gradient} rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 mb-4 sm:mb-6 shadow-lg`}>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex-1">
+                        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-1 sm:mb-2 flex items-center gap-2">
                             Welcome to {user?.institution_name || 'Your Institution'}! 👋
                         </h1>
-                        <p className="text-white/90 text-lg">
+                        <p className="text-white/90 text-sm sm:text-base lg:text-lg">
                             Here's what's happening at your {institutionType} today
                         </p>
                     </div>
-                    <div className="text-right">
-                        <p className="text-white/80 text-sm">Today's Date</p>
-                        <p className="text-white font-semibold text-lg">{getCurrentDate()}</p>
+                    <div className="text-left sm:text-right">
+                        <p className="text-white/80 text-xs sm:text-sm">Today's Date</p>
+                        <p className="text-white font-semibold text-base sm:text-lg">{getCurrentDate()}</p>
                     </div>
                 </div>
             </div>
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            {/* Stats Cards - Mobile Responsive */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-4 sm:mb-6">
                 <StatCard
                     title="Total Students"
                     value={stats.totalStudents}
@@ -119,8 +119,8 @@ const Dashboard = () => {
                 />
             </div>
 
-            {/* Charts Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Charts Row - Mobile Responsive */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                 <div className="lg:col-span-2">
                     <WeeklyChart data={weeklyData} labels={weeklyLabels} />
                 </div>

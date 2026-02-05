@@ -17,6 +17,8 @@ class User(SQLModel, table=True):
     password_hash: str
     role: str  # 'admin' or 'teacher'
     profile_picture_url: Optional[str] = None
+    name: Optional[str] = None  # Full name (especially for teachers)
+    class_division: Optional[str] = None  # Class/Division taught (e.g., "10-A", "BCA-3")
     
     # Note: username is unique per organization, not globally
     # Composite unique constraint: (org_code, username) would be ideal
@@ -42,3 +44,13 @@ class Holiday(SQLModel, table=True):
     date: dt_date = Field(unique=True)
     name: str
     holiday_type: str # 'national' or 'gazetted'
+
+class TeacherInvite(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    token: str = Field(unique=True, index=True)  # Unique invite token
+    org_code: str = Field(foreign_key="organization.org_code", index=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    expires_at: datetime  # 30 minutes from creation
+    used: bool = Field(default=False)
+    used_at: Optional[datetime] = None
+    used_by_username: Optional[str] = None  # Username of teacher who used it

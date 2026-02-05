@@ -37,7 +37,8 @@ const Sidebar = () => {
     const isActive = (path: string) => location.pathname === path;
 
     return (
-        <div className="w-64 bg-white h-screen fixed left-0 top-0 shadow-lg flex flex-col">
+        // Hidden on mobile (< 768px), visible on desktop
+        <div className="hidden md:block w-64 bg-white h-screen fixed left-0 top-0 shadow-lg flex flex-col z-50">
             {/* Logo Section */}
             <div className="p-6 border-b border-gray-100">
                 <div className="flex items-center gap-3">

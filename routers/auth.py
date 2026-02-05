@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Form, UploadFile, File
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlmodel import Session, select
-from datetime import timedelta
+from datetime import timedelta, datetime
 from typing import Annotated
 import shutil
 from pathlib import Path
@@ -9,9 +9,9 @@ import os
 import time
 
 from database import get_session
-from models import User, Organization
+from models import User, Organization, TeacherInvite
 from schemas import Token, OrganizationRegister, OrganizationResponse
-from auth_utils import verify_password, get_password_hash, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
+from auth_utils import verify_password, get_password_hash, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES, generate_invite_token
 from jose import JWTError, jwt
 from auth_utils import SECRET_KEY, ALGORITHM
 from org_utils import generate_org_code, send_org_code_email
@@ -391,3 +391,193 @@ async def list_all_users(
         })
     
     return result
+
+# ============================================================================
+# TEACHER INVITE ENDPOINTS
+# ============================================================================
+
+@router.post("/admin/create-teacher-invite")
+async def create_teacher_invite(
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """Generate a new teacher invite link (Admin only)."""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Generate token
+    token = generate_invite_token()
+    
+    # Set expiration (30 minutes from now)
+    expires_at = datetime.utcnow() + timedelta(minutes=30)
+    
+    # Create invite
+    invite = TeacherInvite(
+        token=token,
+        org_code=current_user.org_code,
+        expires_at=expires_at
+    )
+    session.add(invite)
+    session.commit()
+    session.refresh(invite)
+    
+    print(f"[OK] Teacher invite created: {token[:10]}... expires at {expires_at}")
+    
+    return {
+        "token": token,
+        "invite_url": f"/teacher-invite/{token}",
+        "expires_at": expires_at.isoformat(),
+        "expires_in_minutes": 30
+    }
+
+@router.get("/admin/teacher-invites")
+async def list_teacher_invites(
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """List all teacher invites for this organization (Admin only)."""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    statement = select(TeacherInvite).where(
+        TeacherInvite.org_code == current_user.org_code
+    ).order_by(TeacherInvite.created_at.desc())
+    
+    invites = session.exec(statement).all()
+    
+    now = datetime.utcnow()
+    
+    return [{
+        "token": invite.token,
+        "created_at": invite.created_at.isoformat(),
+        "expires_at": invite.expires_at.isoformat(),
+        "used": invite.used,
+        "used_at": invite.used_at.isoformat() if invite.used_at else None,
+        "used_by": invite.used_by_username,
+        "is_expired": now > invite.expires_at,
+        "status": "used" if invite.used else ("expired" if now > invite.expires_at else "active")
+    } for invite in invites]
+
+@router.delete("/admin/teacher-invites/{token}")
+async def revoke_teacher_invite(
+    token: str,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """Revoke a teacher invite (Admin only)."""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    invite = session.exec(
+        select(TeacherInvite).where(
+            TeacherInvite.token == token,
+            TeacherInvite.org_code == current_user.org_code
+        )
+    ).first()
+    
+    if not invite:
+        raise HTTPException(status_code=404, detail="Invite not found")
+    
+    session.delete(invite)
+    session.commit()
+    
+    print(f"[OK] Teacher invite revoked: {token[:10]}...")
+    
+    return {"message": "Invite revoked successfully"}
+
+@router.get("/verify-teacher-invite/{token}")
+async def verify_teacher_invite(
+    token: str,
+    session: Session = Depends(get_session)
+):
+    """Verify if a teacher invite token is valid (Public endpoint)."""
+    invite = session.exec(
+        select(TeacherInvite).where(TeacherInvite.token == token)
+    ).first()
+    
+    if not invite:
+        raise HTTPException(status_code=404, detail="Invalid invite link")
+    
+    if invite.used:
+        raise HTTPException(status_code=400, detail="This invite has already been used")
+    
+    if datetime.utcnow() > invite.expires_at:
+        raise HTTPException(status_code=400, detail="This invite has expired")
+    
+    # Get organization info
+    org = session.exec(
+        select(Organization).where(Organization.org_code == invite.org_code)
+    ).first()
+    
+    return {
+        "valid": True,
+        "org_code": invite.org_code,
+        "institution_name": org.institution_name if org else "Unknown",
+        "institution_type": org.institution_type if org else "Unknown",
+        "expires_at": invite.expires_at.isoformat()
+    }
+
+@router.post("/register-teacher-via-invite")
+async def register_teacher_via_invite(
+    token: str = Form(...),
+    name: str = Form(...),
+    username: str = Form(...),
+    password: str = Form(...),
+    class_division: str = Form(...),
+    session: Session = Depends(get_session)
+):
+    """Register a new teacher using an invite link (Public endpoint)."""
+    # Verify invite
+    invite = session.exec(
+        select(TeacherInvite).where(TeacherInvite.token == token)
+    ).first()
+    
+    if not invite:
+        raise HTTPException(status_code=404, detail="Invalid invite link")
+    
+    if invite.used:
+        raise HTTPException(status_code=400, detail="This invite has already been used")
+    
+    if datetime.utcnow() > invite.expires_at:
+        raise HTTPException(status_code=400, detail="This invite has expired")
+    
+    # Check if username already exists in this organization
+    existing_user = session.exec(
+        select(User).where(
+            User.org_code == invite.org_code,
+            User.username == username
+        )
+    ).first()
+    
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Username already exists in this organization")
+    
+    # Create teacher user
+    new_teacher = User(
+        org_code=invite.org_code,
+        username=username,
+        password_hash=get_password_hash(password),
+        role="teacher",
+        name=name,
+        class_division=class_division
+    )
+    
+    session.add(new_teacher)
+    
+    # Mark invite as used
+    invite.used = True
+    invite.used_at = datetime.utcnow()
+    invite.used_by_username = username
+    
+    session.commit()
+    session.refresh(new_teacher)
+    
+    print(f"[OK] Teacher registered via invite: {username} ({name}) - {class_division}")
+    
+    return {
+        "message": "Teacher account created successfully",
+        "username": new_teacher.username,
+        "org_code": new_teacher.org_code,
+        "name": new_teacher.name,
+        "class_division": new_teacher.class_division
+    }

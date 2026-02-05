@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { User, GraduationCap, BookOpen, Building2, Mail, CheckCircle, ArrowRight, ArrowLeft, Check } from 'lucide-react';
+import { User, GraduationCap, BookOpen, Building2, Mail, CheckCircle, ArrowRight, ArrowLeft, Check, Eye, EyeOff } from 'lucide-react';
 import { API_URL } from '../config';
 
 const Register = () => {
@@ -34,6 +34,8 @@ const Register = () => {
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isLoading, setIsLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     useEffect(() => {
         const type = searchParams.get('type') as 'school' | 'college';
@@ -500,26 +502,52 @@ const Register = () => {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                         <div>
                                             <label className="block text-sm font-semibold text-gray-700 mb-2">Password *</label>
-                                            <input
-                                                name="adminPassword"
-                                                type="password"
-                                                value={formData.adminPassword}
-                                                onChange={handleInputChange}
-                                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-gray-900"
-                                                placeholder="Min 6 characters"
-                                            />
+                                            <div className="relative">
+                                                <input
+                                                    name="adminPassword"
+                                                    type={showPassword ? "text" : "password"}
+                                                    value={formData.adminPassword}
+                                                    onChange={handleInputChange}
+                                                    className="w-full px-4 py-3 pr-12 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-gray-900"
+                                                    placeholder="Min 6 characters"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                                                >
+                                                    {showPassword ? (
+                                                        <EyeOff className="h-5 w-5" />
+                                                    ) : (
+                                                        <Eye className="h-5 w-5" />
+                                                    )}
+                                                </button>
+                                            </div>
                                             {errors.adminPassword && <p className="text-red-500 text-xs mt-1">{errors.adminPassword}</p>}
                                         </div>
                                         <div>
                                             <label className="block text-sm font-semibold text-gray-700 mb-2">Confirm Password *</label>
-                                            <input
-                                                name="confirmPassword"
-                                                type="password"
-                                                value={formData.confirmPassword}
-                                                onChange={handleInputChange}
-                                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-gray-900"
-                                                placeholder="Re-enter password"
-                                            />
+                                            <div className="relative">
+                                                <input
+                                                    name="confirmPassword"
+                                                    type={showConfirmPassword ? "text" : "password"}
+                                                    value={formData.confirmPassword}
+                                                    onChange={handleInputChange}
+                                                    className="w-full px-4 py-3 pr-12 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-gray-900"
+                                                    placeholder="Re-enter password"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                                                >
+                                                    {showConfirmPassword ? (
+                                                        <EyeOff className="h-5 w-5" />
+                                                    ) : (
+                                                        <Eye className="h-5 w-5" />
+                                                    )}
+                                                </button>
+                                            </div>
                                             {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>}
                                         </div>
                                     </div>
