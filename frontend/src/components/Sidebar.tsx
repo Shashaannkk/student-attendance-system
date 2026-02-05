@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Users, Calendar, BarChart3, Settings, LogOut, BookOpen, GraduationCap, Shield } from 'lucide-react';
+import { LayoutDashboard, Users, Calendar, BarChart3, Settings, LogOut, BookOpen, GraduationCap, Shield, UserPlus } from 'lucide-react';
 
 const Sidebar = () => {
     const { user, logout } = useAuth();
@@ -82,6 +82,30 @@ const Sidebar = () => {
                         </Link>
                     );
                 })}
+
+                {/* Admin-only: Register User (Teacher Invites) */}
+                {user?.role === 'admin' && (
+                    <Link
+                        to="/register-user"
+                        className={`
+                            flex items-center gap-3 px-4 py-3 rounded-xl
+                            transition-all duration-200 ease-in-out
+                            group relative
+                            ${isActive('/register-user')
+                                ? `bg-gradient-to-r ${theme.activeGradient} text-white shadow-lg ${theme.activeShadow} scale-105`
+                                : `text-gray-600 ${theme.hoverBg} hover:text-gray-900 hover:scale-105 hover:shadow-md`
+                            }
+                        `}
+                    >
+                        <UserPlus className={`w-5 h-5 ${isActive('/register-user') ? 'text-white' : `text-gray-500 ${theme.iconHover}`} transition-colors`} />
+                        <span className="font-medium">Register User</span>
+
+                        {/* Hover effect indicator */}
+                        {!isActive('/register-user') && (
+                            <div className={`absolute left-0 w-1 h-0 bg-gradient-to-b ${theme.activeGradient} rounded-r-full group-hover:h-full transition-all duration-200`} />
+                        )}
+                    </Link>
+                )}
 
                 {/* Admin-only link */}
                 {user?.role === 'admin' && (
