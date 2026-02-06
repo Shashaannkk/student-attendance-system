@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from database import create_db_and_tables
 from routers import auth, attendance, students
+from auto_setup import auto_setup_default_account
 import os
 from dotenv import load_dotenv
 
@@ -44,7 +45,11 @@ app.add_middleware(
 @app.on_event("startup")
 def on_startup():
     create_db_and_tables()
-    print("Database initialized. Use migration script to create organizations and users.")
+    print("Database initialized.")
+    
+    # Auto-create default admin account if database is empty
+    auto_setup_default_account()
+
 
 @app.get("/")
 def read_root():
