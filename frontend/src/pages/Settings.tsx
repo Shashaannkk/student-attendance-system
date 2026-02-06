@@ -121,14 +121,14 @@ const Settings = () => {
                     <div className="space-y-6">
                         <div className="flex items-center justify-between mb-8">
                             <div>
-                                <h2 className="text-xl font-bold text-gray-900">Profile Information</h2>
-                                <p className="text-gray-500 text-sm">Update your account's profile information and email address.</p>
+                                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Profile Information</h2>
+                                <p className="text-gray-500 dark:text-gray-400 text-sm">Update your account's profile information and email address.</p>
                             </div>
                         </div>
 
                         {/* Profile Photo */}
-                        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                            <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider">Profile Photo</h3>
+                        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm transition-colors duration-200">
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4 uppercase tracking-wider">Profile Photo</h3>
                             <div className="flex items-center gap-6">
                                 <div className={`w-20 h-20 rounded-full ${theme.primary} text-white flex items-center justify-center text-2xl font-bold overflow-hidden relative`}>
                                     {getProfileImageUrl() ? (
@@ -163,49 +163,49 @@ const Settings = () => {
                                         <Camera size={16} />
                                         {uploading ? 'Uploading...' : 'Change Photo'}
                                     </button>
-                                    <p className="text-xs text-gray-400">JPG, GIF or PNG. 2MB Max.</p>
+                                    <p className="text-xs text-gray-400 dark:text-gray-500">JPG, GIF or PNG. 2MB Max.</p>
                                 </div>
                             </div>
                         </div>
 
                         {/* Personal Info */}
-                        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                            <h3 className="text-sm font-semibold text-gray-900 mb-6 uppercase tracking-wider">Personal Information</h3>
+                        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm transition-colors duration-200">
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-6 uppercase tracking-wider">Personal Information</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Username</label>
                                     <input
                                         type="text"
                                         value={user?.username}
                                         readOnly
-                                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                                        className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-2.5 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-800"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Role</label>
                                     <input
                                         type="text"
                                         value={user?.role}
                                         readOnly
-                                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-gray-600 capitalize focus:outline-none focus:ring-2 focus:ring-blue-100"
+                                        className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-2.5 text-gray-600 dark:text-gray-300 capitalize focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-800"
                                     />
                                 </div>
                                 <div className="md:col-span-2">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Institution Code</label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Institution Code</label>
                                     <input
                                         type="text"
                                         value={user?.org_code}
                                         readOnly
-                                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-gray-600 font-mono focus:outline-none focus:ring-2 focus:ring-blue-100"
+                                        className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-2.5 text-gray-600 dark:text-gray-300 font-mono focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-800"
                                     />
                                 </div>
                                 <div className="md:col-span-2">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Institution Name</label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Institution Name</label>
                                     <input
                                         type="text"
                                         value={user?.institution_name || 'N/A'}
                                         readOnly
-                                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                                        className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-2.5 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-800"
                                     />
                                 </div>
                             </div>
@@ -222,24 +222,24 @@ const Settings = () => {
                 return (
                     <div className="space-y-6">
                         <div className="mb-6">
-                            <h2 className="text-xl font-bold text-gray-900">Security & Password</h2>
-                            <p className="text-gray-500 text-sm">Manage your password and security preferences.</p>
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Security & Password</h2>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm">Manage your password and security preferences.</p>
                         </div>
 
-                        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                            <h3 className="text-sm font-semibold text-gray-900 mb-6 uppercase tracking-wider">Change Password</h3>
+                        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm transition-colors duration-200">
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-6 uppercase tracking-wider">Change Password</h3>
                             <div className="space-y-4 max-w-lg">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
-                                    <input type="password" className="w-full border border-gray-200 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-100" />
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Current Password</label>
+                                    <input type="password" className="w-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-800" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
-                                    <input type="password" className="w-full border border-gray-200 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-100" />
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">New Password</label>
+                                    <input type="password" className="w-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-800" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
-                                    <input type="password" className="w-full border border-gray-200 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-100" />
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Confirm New Password</label>
+                                    <input type="password" className="w-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-800" />
                                 </div>
                                 <button className={`px-6 py-2.5 ${theme.primary} text-white rounded-xl font-medium shadow-md hover:shadow-lg transition-all`}>
                                     Update Password
@@ -251,12 +251,12 @@ const Settings = () => {
 
             default:
                 return (
-                    <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-gray-100 border-dashed">
+                    <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 border-dashed transition-colors duration-200">
                         <div className={`w-16 h-16 ${theme.lightBg} rounded-full flex items-center justify-center mb-4`}>
                             <SettingsIcon className={theme.text} size={32} />
                         </div>
-                        <h3 className="text-lg font-bold text-gray-900 mb-1">Coming Soon</h3>
-                        <p className="text-gray-500 text-sm">This section is under development.</p>
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">Coming Soon</h3>
+                        <p className="text-gray-500 dark:text-gray-400 text-sm">This section is under development.</p>
                     </div>
                 );
         }
@@ -282,17 +282,17 @@ const Settings = () => {
     );
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
             {/* Header Area */}
             <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings</h1>
-                <p className="text-gray-500">Manage your account settings and preferences.</p>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Settings</h1>
+                <p className="text-gray-500 dark:text-gray-400">Manage your account settings and preferences.</p>
             </div>
 
             <div className="flex flex-col lg:flex-row gap-8">
                 {/* Sidebar Navigation */}
                 <div className="w-full lg:w-64 flex-shrink-0">
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-8">
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden sticky top-8 transition-colors duration-200">
                         <nav className="p-2 space-y-1">
                             {tabs.map((tab) => {
                                 const Icon = tab.icon;
@@ -305,7 +305,7 @@ const Settings = () => {
                                             w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-all
                                             ${isActive
                                                 ? `${theme.lightBg} ${theme.text}`
-                                                : 'text-gray-600 hover:bg-gray-50'
+                                                : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                                             }
                                         `}
                                     >
@@ -319,10 +319,10 @@ const Settings = () => {
                             })}
                         </nav>
 
-                        <div className="border-t border-gray-100 p-2 mt-2">
+                        <div className="border-t border-gray-100 dark:border-gray-700 p-2 mt-2">
                             <button
                                 onClick={logout}
-                                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                             >
                                 <LogOut size={18} />
                                 Sign Out
