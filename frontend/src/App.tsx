@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Attendance from './pages/Attendance';
+import Reports from './pages/Reports';
 import RegisterUser from './pages/RegisterUser';
 import RegisterStudent from './pages/RegisterStudent';
 import UploadStudents from './pages/UploadStudents';
@@ -46,6 +47,7 @@ function App() {
                         <Route element={<ProtectedRoute />}>
                             <Route path="/dashboard" element={<Dashboard />} />
                             <Route path="/attendance" element={<Attendance />} />
+                            <Route path="/reports" element={<Reports />} />
                             <Route path="/settings" element={<Settings />} />
                             <Route path="/register-user" element={<RegisterUser />} />
                             <Route path="/register-student" element={<RegisterStudent />} />
