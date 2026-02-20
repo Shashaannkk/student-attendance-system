@@ -47,8 +47,36 @@ def on_startup():
     create_db_and_tables()
     print("Database initialized.")
     
+    # Auto-migrate: add new columns if they don't exist (safe to run multiple times)
+    try:
+        import sqlite3
+        db_path = os.getenv("DATABASE_URL", "attendance_sys.db")
+        # Strip sqlite:/// prefix if present
+        if db_path.startswith("sqlite:///"):
+            db_path = db_path[len("sqlite:///"):]
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        # Add division column to student if missing
+        try:
+            cursor.execute("ALTER TABLE student ADD COLUMN division TEXT NOT NULL DEFAULT 'A'")
+            print("[AutoMigrate] Added division column to student")
+        except Exception:
+            pass  # Already exists
+        # Add status column to attendance if missing
+        try:
+            cursor.execute("ALTER TABLE attendance ADD COLUMN status TEXT NOT NULL DEFAULT 'P'")
+            print("[AutoMigrate] Added status column to attendance")
+        except Exception:
+            pass  # Already exists
+        conn.commit()
+        conn.close()
+        print("[AutoMigrate] Schema check complete.")
+    except Exception as e:
+        print("[AutoMigrate] Warning: " + str(e))
+    
     # Auto-create default admin account if database is empty
     auto_setup_default_account()
+
 
 
 @app.get("/")
