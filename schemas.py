@@ -14,8 +14,9 @@ class TokenData(BaseModel):
 class StudentCreate(BaseModel):
     name: str
     class_name: str
+    division: str = "A"
     roll_no: int
-    student_id: Optional[str] = None # Optional, if not provided, backend generates it
+    student_id: Optional[str] = None  # Optional, if not provided, backend generates it
 
 class StudentRead(Student):
     pass
@@ -24,20 +25,25 @@ class AttendanceCreate(BaseModel):
     student_id: str
     subject: str
     date: date
-    present: bool
+    status: str = "P"  # "P", "A", "L"
 
 class AttendanceRead(Attendance):
     pass
 
 class BulkAttendanceItem(BaseModel):
     student_id: str
-    present: bool
+    status: str = "P"  # "P" = Present, "A" = Absent, "L" = Late
 
 class BulkAttendanceCreate(BaseModel):
     class_name: str
+    division: str = "A"
     subject: str
     date: date
     items: List[BulkAttendanceItem]
+
+class ClassSeedRequest(BaseModel):
+    class_name: str
+    division: str = "A"
 
 # Organization Registration Schemas
 class OrganizationRegister(BaseModel):

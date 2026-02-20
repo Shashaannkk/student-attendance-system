@@ -25,9 +25,10 @@ class User(SQLModel, table=True):
 
 class Student(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    student_id: str = Field(index=True, unique=True) # STU0001
+    student_id: str = Field(index=True, unique=True)  # STU0001
     name: str
-    class_name: str = Field(index=True)
+    class_name: str = Field(index=True)   # e.g. "FY", "SY", "10th"
+    division: str = Field(default="A", index=True)  # e.g. "A", "B", "C"
     roll_no: int
 
 class Attendance(SQLModel, table=True):
@@ -35,15 +36,18 @@ class Attendance(SQLModel, table=True):
     student_id: str = Field(foreign_key="student.student_id", index=True)
     subject: str = Field(index=True)
     date: dt_date
-    present: bool
+    status: str = Field(default="P")  # "P" = Present, "A" = Absent, "L" = Late
     
-    # Composite unique constraint could be nice, but simple fields for now
+    # Legacy field for backwards compat (derived from status)
+    @property
+    def present(self) -> bool:
+        return self.status == "P"
 
 class Holiday(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     date: dt_date = Field(unique=True)
     name: str
-    holiday_type: str # 'national' or 'gazetted'
+    holiday_type: str  # 'national' or 'gazetted'
 
 class TeacherInvite(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

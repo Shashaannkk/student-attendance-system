@@ -1,6 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
-from typing import List
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlmodel import Session, select, func
+from typing import List, Optional
+from datetime import date as dt_date, timedelta
+from collections import defaultdict
 
 from database import get_session
 from models import Attendance, User, Student
@@ -9,9 +11,10 @@ from routers.auth import get_current_user
 
 router = APIRouter()
 
+
 @router.post("/", response_model=AttendanceRead)
 def mark_attendance(
-    attendance: AttendanceCreate, 
+    attendance: AttendanceCreate,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
@@ -21,28 +24,32 @@ def mark_attendance(
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
-    # Check if already marked?
-    # For simplicity, allow key-value overwrite logic if we want, or create new record.
-    # Let's check if exists for that day+student+subject
+    # Upsert: check if already marked for this date+student+subject
     statement = select(Attendance).where(
         Attendance.student_id == attendance.student_id,
         Attendance.date == attendance.date,
         Attendance.subject == attendance.subject
     )
     existing = session.exec(statement).first()
-    
+
     if existing:
-        existing.present = attendance.present
+        existing.status = attendance.status
         session.add(existing)
         session.commit()
         session.refresh(existing)
         return existing
-    
-    db_attendance = Attendance.from_orm(attendance)
+
+    db_attendance = Attendance(
+        student_id=attendance.student_id,
+        subject=attendance.subject,
+        date=attendance.date,
+        status=attendance.status
+    )
     session.add(db_attendance)
     session.commit()
     session.refresh(db_attendance)
     return db_attendance
+
 
 @router.post("/bulk")
 def mark_bulk_attendance(
@@ -50,37 +57,141 @@ def mark_bulk_attendance(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    results = []
-    
     for item in bulk_data.items:
-        # Check if student in class? (Optional validation)
-        
-        # Upsert logic
         statement = select(Attendance).where(
             Attendance.student_id == item.student_id,
             Attendance.date == bulk_data.date,
             Attendance.subject == bulk_data.subject
         )
         existing = session.exec(statement).first()
-        
+
         if existing:
-            existing.present = item.present
+            existing.status = item.status
             session.add(existing)
         else:
             new_record = Attendance(
                 student_id=item.student_id,
                 subject=bulk_data.subject,
                 date=bulk_data.date,
-                present=item.present
+                status=item.status
             )
             session.add(new_record)
-        
+
     session.commit()
     return {"message": "Bulk attendance marked successfully"}
 
+
+@router.get("/stats")
+def get_attendance_stats(
+    target_date: Optional[dt_date] = None,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """Return today's (or a specific date's) P/A/L counts and total students."""
+    if target_date is None:
+        target_date = dt_date.today()
+
+    records = session.exec(
+        select(Attendance).where(Attendance.date == target_date)
+    ).all()
+
+    present = sum(1 for r in records if r.status == "P")
+    absent = sum(1 for r in records if r.status == "A")
+    late = sum(1 for r in records if r.status == "L")
+
+    total_students = session.exec(select(func.count(Student.id))).one()
+
+    return {
+        "date": str(target_date),
+        "total_students": total_students,
+        "present": present,
+        "absent": absent,
+        "late": late,
+        "records_today": len(records)
+    }
+
+
+@router.get("/weekly")
+def get_weekly_attendance(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """Return attendance counts for the last 7 days."""
+    today = dt_date.today()
+    result = []
+
+    for i in range(6, -1, -1):
+        day = today - timedelta(days=i)
+        records = session.exec(
+            select(Attendance).where(Attendance.date == day)
+        ).all()
+        present = sum(1 for r in records if r.status == "P")
+        absent = sum(1 for r in records if r.status == "A")
+        late = sum(1 for r in records if r.status == "L")
+        result.append({
+            "date": str(day),
+            "label": day.strftime("%a"),
+            "present": present,
+            "absent": absent,
+            "late": late,
+            "total": present + absent + late
+        })
+
+    return result
+
+
+@router.get("/defaulters")
+def get_defaulters(
+    threshold: float = 75.0,
+    subject: Optional[str] = None,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """Return students with attendance below the threshold percentage."""
+    query = select(Attendance)
+    if subject:
+        query = query.where(Attendance.subject == subject)
+
+    all_records = session.exec(query).all()
+
+    # Group by student_id + subject
+    student_subject: dict = defaultdict(lambda: {"P": 0, "A": 0, "L": 0, "total": 0})
+    for r in all_records:
+        key = (r.student_id, r.subject)
+        student_subject[key][r.status] += 1
+        student_subject[key]["total"] += 1
+
+    defaulters = []
+    for (student_id, subj), counts in student_subject.items():
+        if counts["total"] == 0:
+            continue
+        present_count = counts["P"] + counts["L"]  # Late counts as present for %
+        percentage = (present_count / counts["total"]) * 100
+        if percentage < threshold:
+            student = session.exec(
+                select(Student).where(Student.student_id == student_id)
+            ).first()
+            defaulters.append({
+                "student_id": student_id,
+                "name": student.name if student else "Unknown",
+                "class_name": student.class_name if student else "",
+                "division": student.division if student else "",
+                "roll_no": student.roll_no if student else 0,
+                "subject": subj,
+                "present": counts["P"],
+                "late": counts["L"],
+                "absent": counts["A"],
+                "total": counts["total"],
+                "percentage": round(percentage, 1)
+            })
+
+    defaulters.sort(key=lambda x: x["percentage"])
+    return defaulters
+
+
 @router.get("/student/{student_id}", response_model=List[AttendanceRead])
 def get_student_attendance(
-    student_id: str, 
+    student_id: str,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):

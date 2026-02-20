@@ -29,7 +29,7 @@ const Sidebar = () => {
     const menuItems = [
         { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
         { name: 'Students', icon: Users, path: '/register-student' },
-        { name: 'Attendance', icon: Calendar, path: '/attendance' },
+        { name: 'Attendance', icon: Calendar, path: '/take-attendance' },
         { name: 'Reports', icon: BarChart3, path: '/reports' },
         { name: 'Settings', icon: Settings, path: '/settings' },
     ];
