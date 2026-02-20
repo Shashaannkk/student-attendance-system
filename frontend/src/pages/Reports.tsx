@@ -1,271 +1,228 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
 import {
-    Calendar,
-    Download,
-    FileText,
-    Filter,
-    TrendingUp,
-    Users,
-    BookOpen,
-    Clock,
-    AlertCircle,
-    CheckCircle,
-    XCircle,
-    Printer,
-    FileSpreadsheet,
-    FileDown
+    Calendar, Download, FileText, Filter,
+    TrendingUp, Users, BookOpen, Clock,
+    AlertCircle, CheckCircle, XCircle,
+    Printer, FileSpreadsheet, FileDown,
+    RefreshCw, Loader, ChevronDown
 } from 'lucide-react';
+import { API_URL } from '../config';
 
-type ReportType = 'student' | 'class' | 'subject' | 'defaulters' | 'summary';
 type DateRange = 'today' | 'week' | 'month' | 'custom';
 
-interface AttendanceRecord {
-    id: string;
-    studentName: string;
-    rollNumber: string;
-    class: string;
+interface ReportRecord {
+    id: number;
+    student_id: string;
+    name: string;
+    roll_no: number;
+    class_name: string;
+    division: string;
     subject: string;
     date: string;
-    status: 'present' | 'absent' | 'late';
+    status: 'P' | 'A' | 'L';
+}
+
+interface Stats {
+    total_students: number;
+    present: number;
+    absent: number;
+    late: number;
+    records_today: number;
+}
+
+interface Defaulter {
+    student_id: string;
+    name: string;
+    class_name: string;
+    division: string;
+    subject: string;
     percentage: number;
+    present: number;
+    absent: number;
+    late: number;
+    total: number;
 }
 
 const Reports = () => {
     const { user } = useAuth();
     const institutionType = user?.institution_type || 'school';
     const isSchool = institutionType === 'school';
-
-    // Theme configuration
     const theme = {
         gradient: isSchool ? 'from-blue-500 to-cyan-500' : 'from-indigo-600 to-purple-600',
-        primary: isSchool ? 'blue' : 'indigo',
-        hover: isSchool ? 'hover:bg-blue-50 dark:hover:bg-blue-900/20' : 'hover:bg-indigo-50 dark:hover:bg-indigo-900/20',
+        accent: isSchool ? 'blue' : 'indigo',
     };
 
-    // State management
-    const [reportType, setReportType] = useState<ReportType>('summary');
-    const [dateRange, setDateRange] = useState<DateRange>('month');
+    const token = localStorage.getItem('token');
+    const headers = { Authorization: `Bearer ${token}` };
+
+    // ── Filter state ────────────────────────────────────────────────────────────
+    const [dateRange, setDateRange] = useState<DateRange>('today');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
-    const [selectedClass, setSelectedClass] = useState('all');
-    const [selectedSubject, setSelectedSubject] = useState('all');
-    const [showFilters, setShowFilters] = useState(false);
+    const [selectedSubject, setSelectedSubject] = useState('');
+    const [selectedStatus, setSelectedStatus] = useState('');
+    const [showFilters, setShowFilters] = useState(true);
 
-    // Mock data - Replace with actual API calls
-    const mockData: AttendanceRecord[] = [
-        { id: '1', studentName: 'John Doe', rollNumber: '001', class: '10-A', subject: 'Mathematics', date: '2026-02-10', status: 'present', percentage: 95 },
-        { id: '2', studentName: 'Jane Smith', rollNumber: '002', class: '10-A', subject: 'Mathematics', date: '2026-02-10', status: 'present', percentage: 92 },
-        { id: '3', studentName: 'Bob Johnson', rollNumber: '003', class: '10-A', subject: 'Mathematics', date: '2026-02-10', status: 'absent', percentage: 68 },
-        { id: '4', studentName: 'Alice Williams', rollNumber: '004', class: '10-B', subject: 'Science', date: '2026-02-10', status: 'late', percentage: 88 },
-        { id: '5', studentName: 'Charlie Brown', rollNumber: '005', class: '10-B', subject: 'Science', date: '2026-02-10', status: 'present', percentage: 98 },
-    ];
+    // ── Live data state ─────────────────────────────────────────────────────────
+    const [records, setRecords] = useState<ReportRecord[]>([]);
+    const [stats, setStats] = useState<Stats | null>(null);
+    const [defaulters, setDefaulters] = useState<Defaulter[]>([]);
+    const [subjects, setSubjects] = useState<string[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [lastFetched, setLastFetched] = useState<string>('');
 
-    const summaryStats = {
-        totalStudents: 485,
-        averageAttendance: 91.5,
-        presentToday: 445,
-        absentToday: 25,
-        lateToday: 15,
-        defaulters: 12,
-    };
+    // ── Compute date params from dateRange ──────────────────────────────────────
+    const getDateParams = useCallback(() => {
+        const today = new Date();
+        const fmt = (d: Date) => d.toISOString().split('T')[0];
 
-    // Report type options
-    const reportTypes = [
-        { value: 'summary', label: 'Summary Report', icon: FileText },
-        { value: 'student', label: 'Student-wise', icon: Users },
-        { value: 'class', label: 'Class-wise', icon: BookOpen },
-        { value: 'subject', label: 'Subject-wise', icon: BookOpen },
-        { value: 'defaulters', label: 'Defaulters (<75%)', icon: AlertCircle },
-    ];
-
-    // Export handlers
-    const handleExportPDF = () => {
-        console.log('Exporting to PDF...');
-        // Implement PDF export logic
-    };
-
-    const handleExportExcel = () => {
-        console.log('Exporting to Excel...');
-        // Implement Excel export logic
-    };
-
-    const handleExportCSV = () => {
-        console.log('Exporting to CSV...');
-        // Implement CSV export logic
-    };
-
-    const handlePrint = () => {
-        window.print();
-    };
-
-    // Get status badge styling
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'present':
-                return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
-            case 'absent':
-                return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
-            case 'late':
-                return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400';
-            default:
-                return 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300';
+        if (dateRange === 'today') return { start: fmt(today), end: fmt(today) };
+        if (dateRange === 'week') {
+            const start = new Date(today);
+            start.setDate(today.getDate() - 6);
+            return { start: fmt(start), end: fmt(today) };
         }
+        if (dateRange === 'month') {
+            const start = new Date(today.getFullYear(), today.getMonth(), 1);
+            return { start: fmt(start), end: fmt(today) };
+        }
+        // custom
+        return { start: startDate, end: endDate };
+    }, [dateRange, startDate, endDate]);
+
+    // ── Fetch everything ────────────────────────────────────────────────────────
+    const fetchData = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const { start, end } = getDateParams();
+            if (!start || !end) { setIsLoading(false); return; }
+
+            // Build report URL
+            let reportUrl = `${API_URL}/attendance/report?start_date=${start}&end_date=${end}&limit=300`;
+            if (selectedSubject) reportUrl += `&subject=${encodeURIComponent(selectedSubject)}`;
+            if (selectedStatus) reportUrl += `&status=${encodeURIComponent(selectedStatus)}`;
+
+            const [recordsRes, statsRes, defaultersRes, subjectsRes] = await Promise.all([
+                fetch(reportUrl, { headers }),
+                fetch(`${API_URL}/attendance/stats`, { headers }),
+                fetch(`${API_URL}/attendance/defaulters?threshold=75`, { headers }),
+                fetch(`${API_URL}/attendance/subjects`, { headers }),
+            ]);
+
+            if (recordsRes.ok) setRecords(await recordsRes.json());
+            if (statsRes.ok) setStats(await statsRes.json());
+            if (defaultersRes.ok) setDefaulters(await defaultersRes.json());
+            if (subjectsRes.ok) setSubjects(await subjectsRes.json());
+            setLastFetched(new Date().toLocaleTimeString());
+        } catch (e) {
+            console.error('Report fetch error', e);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [getDateParams, selectedSubject, selectedStatus, token]);
+
+    useEffect(() => { fetchData(); }, [fetchData]);
+
+    // ── CSV Export ──────────────────────────────────────────────────────────────
+    const handleExportCSV = () => {
+        if (records.length === 0) return;
+        const header = ['Roll No', 'Name', 'Class', 'Division', 'Subject', 'Date', 'Status'];
+        const rows = records.map(r => [r.roll_no, r.name, r.class_name, r.division, r.subject, r.date,
+        r.status === 'P' ? 'Present' : r.status === 'A' ? 'Absent' : 'Late']);
+        const csv = [header, ...rows].map(r => r.join(',')).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url;
+        a.download = `attendance_report_${new Date().toISOString().split('T')[0]}.csv`;
+        a.click(); URL.revokeObjectURL(url);
     };
 
-    // Get percentage color
-    const getPercentageColor = (percentage: number) => {
-        if (percentage >= 90) return 'text-green-600 dark:text-green-400';
-        if (percentage >= 75) return 'text-yellow-600 dark:text-yellow-400';
-        return 'text-red-600 dark:text-red-400';
-    };
+    const handlePrint = () => window.print();
 
+    // ── Helpers ─────────────────────────────────────────────────────────────────
+    const statusBadge = (s: string) => {
+        if (s === 'P') return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
+        if (s === 'A') return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
+        return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400';
+    };
+    const statusLabel = (s: string) => s === 'P' ? 'Present' : s === 'A' ? 'Absent' : 'Late';
+    const pctColor = (p: number) => p >= 90 ? 'text-green-600' : p >= 75 ? 'text-yellow-600' : 'text-red-600';
+
+    const present = records.filter(r => r.status === 'P').length;
+    const absent = records.filter(r => r.status === 'A').length;
+    const late = records.filter(r => r.status === 'L').length;
+    const avgPct = records.length > 0 ? Math.round(((present + late) / records.length) * 100) : 0;
+
+    // ── Render ───────────────────────────────────────────────────────────────────
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
             <Header />
-
             <main className="px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
-                {/* Page Header */}
-                <div className={`bg-gradient-to-r ${theme.gradient} rounded-xl sm:rounded-2xl lg:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-lg`}>
+
+                {/* Banner */}
+                <div className={`bg-gradient-to-r ${theme.gradient} rounded-2xl p-5 sm:p-8 shadow-lg`}>
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                        <div className="flex-1">
-                            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-1 sm:mb-2 flex items-center gap-2 sm:gap-3">
-                                <FileText className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8" />
-                                Attendance Reports
+                        <div>
+                            <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+                                <FileText className="w-7 h-7" /> Attendance Reports
                             </h1>
-                            <p className="text-white/90 text-sm sm:text-base">
-                                Generate comprehensive attendance reports and analytics
-                            </p>
+                            <p className="text-white/80 text-sm mt-1">Live data from your database</p>
                         </div>
-                        <div className="flex gap-2 flex-wrap w-full sm:w-auto">
-                            <button
-                                onClick={handleExportPDF}
-                                className="flex items-center justify-center gap-1.5 sm:gap-2 bg-white/20 hover:bg-white/30 text-white px-3 sm:px-4 py-2 rounded-lg transition-all flex-1 sm:flex-initial min-w-0"
-                                title="Export as PDF"
-                            >
-                                <FileDown className="w-4 h-4 flex-shrink-0" />
-                                <span className="text-sm sm:text-base">PDF</span>
+                        <div className="flex gap-2 flex-wrap">
+                            <button onClick={fetchData} className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white px-3 py-2 rounded-lg text-sm transition-all">
+                                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} /> Refresh
                             </button>
-                            <button
-                                onClick={handleExportExcel}
-                                className="flex items-center justify-center gap-1.5 sm:gap-2 bg-white/20 hover:bg-white/30 text-white px-3 sm:px-4 py-2 rounded-lg transition-all flex-1 sm:flex-initial min-w-0"
-                                title="Export as Excel"
-                            >
-                                <FileSpreadsheet className="w-4 h-4 flex-shrink-0" />
-                                <span className="text-sm sm:text-base">Excel</span>
+                            <button onClick={handleExportCSV} className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white px-3 py-2 rounded-lg text-sm transition-all">
+                                <Download className="w-4 h-4" /> CSV
                             </button>
-                            <button
-                                onClick={handleExportCSV}
-                                className="flex items-center justify-center gap-1.5 sm:gap-2 bg-white/20 hover:bg-white/30 text-white px-3 sm:px-4 py-2 rounded-lg transition-all flex-1 sm:flex-initial min-w-0"
-                                title="Export as CSV"
-                            >
-                                <Download className="w-4 h-4 flex-shrink-0" />
-                                <span className="text-sm sm:text-base">CSV</span>
-                            </button>
-                            <button
-                                onClick={handlePrint}
-                                className="flex items-center justify-center gap-1.5 sm:gap-2 bg-white/20 hover:bg-white/30 text-white px-3 sm:px-4 py-2 rounded-lg transition-all flex-1 sm:flex-initial min-w-0"
-                                title="Print Report"
-                            >
-                                <Printer className="w-4 h-4 flex-shrink-0" />
-                                <span className="text-sm sm:text-base">Print</span>
+                            <button onClick={handlePrint} className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white px-3 py-2 rounded-lg text-sm transition-all">
+                                <Printer className="w-4 h-4" /> Print
                             </button>
                         </div>
                     </div>
                 </div>
 
-                {/* Summary Cards */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-                    <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-sm">
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-2">
-                            <Users className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
-                            <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 leading-tight">Total Students</p>
+                {/* Live Summary Cards */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                    {[
+                        { label: 'Total Students', value: stats?.total_students ?? 0, icon: Users, color: 'text-blue-600' },
+                        { label: 'Avg Attendance', value: `${avgPct}%`, icon: TrendingUp, color: 'text-green-600' },
+                        { label: 'Present', value: present, icon: CheckCircle, color: 'text-green-600' },
+                        { label: 'Absent', value: absent, icon: XCircle, color: 'text-red-600' },
+                        { label: 'Late', value: late, icon: Clock, color: 'text-yellow-600' },
+                        { label: 'Defaulters', value: defaulters.length, icon: AlertCircle, color: 'text-red-600' },
+                    ].map(({ label, value, icon: Icon, color }) => (
+                        <div key={label} className="bg-white dark:bg-gray-800 rounded-xl p-3 sm:p-4 shadow-sm">
+                            <div className="flex items-center gap-1.5 mb-1">
+                                <Icon className={`w-4 h-4 ${color}`} />
+                                <p className="text-[10px] sm:text-xs text-gray-500 leading-tight">{label}</p>
+                            </div>
+                            <p className={`text-xl sm:text-2xl font-bold ${color}`}>{value}</p>
                         </div>
-                        <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{summaryStats.totalStudents}</p>
-                    </div>
-                    <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-sm">
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-2">
-                            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 dark:text-green-400" />
-                            <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 leading-tight">Avg. Attendance</p>
-                        </div>
-                        <p className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400">{summaryStats.averageAttendance}%</p>
-                    </div>
-                    <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-sm">
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-2">
-                            <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 dark:text-green-400" />
-                            <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 leading-tight">Present</p>
-                        </div>
-                        <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{summaryStats.presentToday}</p>
-                    </div>
-                    <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-sm">
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-2">
-                            <XCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 dark:text-red-400" />
-                            <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 leading-tight">Absent</p>
-                        </div>
-                        <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{summaryStats.absentToday}</p>
-                    </div>
-                    <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-sm">
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-2">
-                            <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-600 dark:text-yellow-400" />
-                            <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 leading-tight">Late</p>
-                        </div>
-                        <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{summaryStats.lateToday}</p>
-                    </div>
-                    <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-sm">
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-2">
-                            <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 dark:text-red-400" />
-                            <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 leading-tight">Defaulters</p>
-                        </div>
-                        <p className="text-xl sm:text-2xl font-bold text-red-600 dark:text-red-400">{summaryStats.defaulters}</p>
-                    </div>
+                    ))}
                 </div>
 
-                {/* Filters Section */}
-                <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow-sm p-4 sm:p-6">
+                {/* Filters */}
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 sm:p-6">
                     <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                            <Filter className="w-4 h-4 sm:w-5 sm:h-5" />
-                            Filters
+                        <h2 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                            <Filter className="w-4 h-4" /> Filters
+                            {lastFetched && <span className="text-xs font-normal text-gray-400 ml-2">Updated {lastFetched}</span>}
                         </h2>
-                        <button
-                            onClick={() => setShowFilters(!showFilters)}
-                            className={`text-xs sm:text-sm ${theme.hover} px-3 py-1.5 sm:py-1 rounded-lg transition-colors text-${theme.primary}-600 dark:text-${theme.primary}-400 font-medium`}
-                        >
-                            {showFilters ? 'Hide' : 'Show'} Filters
+                        <button onClick={() => setShowFilters(f => !f)}
+                            className="text-xs text-indigo-600 dark:text-indigo-400 font-medium hover:underline">
+                            {showFilters ? 'Hide' : 'Show'}
                         </button>
                     </div>
-
                     {showFilters && (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            {/* Report Type */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Report Type
-                                </label>
-                                <select
-                                    value={reportType}
-                                    onChange={(e) => setReportType(e.target.value as ReportType)}
-                                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                                >
-                                    {reportTypes.map((type) => (
-                                        <option key={type.value} value={type.value}>
-                                            {type.label}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
                             {/* Date Range */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Date Range
-                                </label>
-                                <select
-                                    value={dateRange}
-                                    onChange={(e) => setDateRange(e.target.value as DateRange)}
-                                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                                >
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date Range</label>
+                                <select value={dateRange} onChange={e => setDateRange(e.target.value as DateRange)}
+                                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
                                     <option value="today">Today</option>
                                     <option value="week">This Week</option>
                                     <option value="month">This Month</option>
@@ -273,66 +230,40 @@ const Reports = () => {
                                 </select>
                             </div>
 
-                            {/* Class Filter */}
+                            {/* Subject — populated from real DB */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Class
-                                </label>
-                                <select
-                                    value={selectedClass}
-                                    onChange={(e) => setSelectedClass(e.target.value)}
-                                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                                >
-                                    <option value="all">All Classes</option>
-                                    <option value="10-A">10-A</option>
-                                    <option value="10-B">10-B</option>
-                                    <option value="11-A">11-A</option>
-                                    <option value="11-B">11-B</option>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subject</label>
+                                <select value={selectedSubject} onChange={e => setSelectedSubject(e.target.value)}
+                                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                                    <option value="">All Subjects</option>
+                                    {subjects.map(s => <option key={s} value={s}>{s}</option>)}
                                 </select>
                             </div>
 
-                            {/* Subject Filter */}
+                            {/* Status filter */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Subject
-                                </label>
-                                <select
-                                    value={selectedSubject}
-                                    onChange={(e) => setSelectedSubject(e.target.value)}
-                                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                                >
-                                    <option value="all">All Subjects</option>
-                                    <option value="mathematics">Mathematics</option>
-                                    <option value="science">Science</option>
-                                    <option value="english">English</option>
-                                    <option value="history">History</option>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+                                <select value={selectedStatus} onChange={e => setSelectedStatus(e.target.value)}
+                                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                                    <option value="">All</option>
+                                    <option value="P">Present</option>
+                                    <option value="A">Absent</option>
+                                    <option value="L">Late</option>
                                 </select>
                             </div>
 
-                            {/* Custom Date Range */}
+                            {/* Custom date pickers */}
                             {dateRange === 'custom' && (
                                 <>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                            Start Date
-                                        </label>
-                                        <input
-                                            type="date"
-                                            value={startDate}
-                                            onChange={(e) => setStartDate(e.target.value)}
-                                            className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                                        />
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date</label>
+                                        <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
+                                            className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm" />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                            End Date
-                                        </label>
-                                        <input
-                                            type="date"
-                                            value={endDate}
-                                            onChange={(e) => setEndDate(e.target.value)}
-                                            className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                                        />
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Date</label>
+                                        <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
+                                            className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm" />
                                     </div>
                                 </>
                             )}
@@ -340,87 +271,109 @@ const Reports = () => {
                     )}
                 </div>
 
-                {/* Report Data Table */}
-                <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow-sm overflow-hidden">
-                    <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
-                        <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
-                            {reportTypes.find(t => t.value === reportType)?.label || 'Report Data'}
-                        </h2>
-                        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            Showing results for {dateRange === 'custom' ? 'custom date range' : dateRange}
-                        </p>
-                    </div>
-
-                    <div className="overflow-x-auto -mx-4 sm:mx-0">
-                        <table className="w-full min-w-[640px]">
-                            <thead className="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Roll No.
-                                    </th>
-                                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Student Name
-                                    </th>
-                                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Class
-                                    </th>
-                                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Subject
-                                    </th>
-                                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Status
-                                    </th>
-                                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Attendance %
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                {mockData.map((record) => (
-                                    <tr key={record.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
-                                            {record.rollNumber}
-                                        </td>
-                                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 dark:text-white">
-                                            {record.studentName}
-                                        </td>
-                                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                                            {record.class}
-                                        </td>
-                                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                                            {record.subject}
-                                        </td>
-                                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
-                                            <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium ${getStatusBadge(record.status)}`}>
-                                                {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
-                                            </span>
-                                        </td>
-                                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
-                                            <span className={`text-xs sm:text-sm font-bold ${getPercentageColor(record.percentage)}`}>
-                                                {record.percentage}%
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {/* Pagination */}
-                    <div className="px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
-                        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 text-center sm:text-left">
-                            Showing 1 to {mockData.length} of {mockData.length} results
-                        </p>
-                        <div className="flex gap-2">
-                            <button className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-xs sm:text-sm font-medium">
-                                Previous
-                            </button>
-                            <button className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-xs sm:text-sm font-medium">
-                                Next
-                            </button>
+                {/* Records Table */}
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+                    <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                        <div>
+                            <h2 className="text-base font-bold text-gray-900 dark:text-white">Attendance Records</h2>
+                            <p className="text-xs text-gray-500 mt-0.5">{records.length} records found</p>
                         </div>
+                        {isLoading && <Loader className="w-5 h-5 animate-spin text-indigo-500" />}
+                    </div>
+
+                    {records.length === 0 && !isLoading ? (
+                        <div className="text-center py-20 text-gray-400">
+                            <FileText className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                            <p className="font-medium">No records found</p>
+                            <p className="text-sm mt-1">Try changing the date range or filters</p>
+                        </div>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="w-full min-w-[640px]">
+                                <thead className="bg-gray-50 dark:bg-gray-700">
+                                    <tr>
+                                        {['Roll No', 'Student Name', 'Class', 'Subject', 'Date', 'Status'].map(h => (
+                                            <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">{h}</th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                                    {records.map(record => (
+                                        <tr key={record.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                                            <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">{record.roll_no}</td>
+                                            <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                                                <div>{record.name}</div>
+                                                <div className="text-xs text-gray-400">{record.student_id}</div>
+                                            </td>
+                                            <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{record.class_name}-{record.division}</td>
+                                            <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{record.subject}</td>
+                                            <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{record.date}</td>
+                                            <td className="px-4 py-3">
+                                                <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusBadge(record.status)}`}>
+                                                    {statusLabel(record.status)}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+
+                    <div className="px-4 sm:px-6 py-3 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-400 text-right">
+                        {records.length} records · {present}P / {absent}A / {late}L
                     </div>
                 </div>
+
+                {/* Defaulters Table */}
+                {defaulters.length > 0 && (
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+                        <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
+                            <h2 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                <AlertCircle className="w-5 h-5 text-red-500" /> Defaulters (Below 75%)
+                            </h2>
+                            <p className="text-xs text-gray-500 mt-0.5">{defaulters.length} students at risk</p>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="w-full min-w-[600px]">
+                                <thead className="bg-red-50 dark:bg-red-900/20">
+                                    <tr>
+                                        {['Student', 'Class', 'Subject', 'P / A / L', 'Attendance %'].map(h => (
+                                            <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-red-700 dark:text-red-400 uppercase tracking-wider">{h}</th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                                    {defaulters.map((d, i) => (
+                                        <tr key={i} className="hover:bg-red-50/40 dark:hover:bg-red-900/10 transition-colors">
+                                            <td className="px-4 py-3 text-sm">
+                                                <div className="font-medium text-gray-900 dark:text-white">{d.name}</div>
+                                                <div className="text-xs text-gray-400">{d.student_id}</div>
+                                            </td>
+                                            <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{d.class_name} {d.division}</td>
+                                            <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{d.subject}</td>
+                                            <td className="px-4 py-3 text-sm">
+                                                <span className="text-green-600 font-medium">{d.present}P</span>
+                                                {' / '}
+                                                <span className="text-red-600 font-medium">{d.absent}A</span>
+                                                {' / '}
+                                                <span className="text-amber-600 font-medium">{d.late}L</span>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <span className={`text-sm font-bold ${pctColor(d.percentage)}`}>{d.percentage}%</span>
+                                                <div className="w-20 h-1.5 bg-gray-200 rounded-full mt-1">
+                                                    <div className={`h-1.5 rounded-full ${d.percentage < 60 ? 'bg-red-500' : 'bg-orange-400'}`}
+                                                        style={{ width: `${d.percentage}%` }} />
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+
             </main>
         </div>
     );

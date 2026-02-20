@@ -198,3 +198,73 @@ def get_student_attendance(
     statement = select(Attendance).where(Attendance.student_id == student_id)
     results = session.exec(statement).all()
     return results
+
+
+@router.get("/subjects")
+def get_distinct_subjects(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """Return all distinct subjects that have attendance records."""
+    records = session.exec(select(Attendance.subject)).all()
+    subjects = sorted(set(records))
+    return subjects
+
+
+@router.get("/report")
+def get_attendance_report(
+    start_date: Optional[dt_date] = None,
+    end_date: Optional[dt_date] = None,
+    subject: Optional[str] = None,
+    class_name: Optional[str] = None,
+    status: Optional[str] = None,
+    limit: int = 200,
+    offset: int = 0,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """Filterable attendance report joined with student info."""
+    today = dt_date.today()
+
+    # Default: today
+    if start_date is None and end_date is None:
+        start_date = today
+        end_date = today
+
+    query = select(Attendance)
+
+    if start_date:
+        query = query.where(Attendance.date >= start_date)
+    if end_date:
+        query = query.where(Attendance.date <= end_date)
+    if subject:
+        query = query.where(Attendance.subject == subject)
+    if status:
+        query = query.where(Attendance.status == status)
+
+    query = query.order_by(Attendance.date.desc()).offset(offset).limit(limit)
+    records = session.exec(query).all()
+
+    result = []
+    for r in records:
+        student = session.exec(
+            select(Student).where(Student.student_id == r.student_id)
+        ).first()
+
+        # Filter by class_name if provided
+        if class_name and (not student or student.class_name != class_name):
+            continue
+
+        result.append({
+            "id": r.id,
+            "student_id": r.student_id,
+            "name": student.name if student else "Unknown",
+            "roll_no": student.roll_no if student else 0,
+            "class_name": student.class_name if student else "",
+            "division": student.division if student else "",
+            "subject": r.subject,
+            "date": str(r.date),
+            "status": r.status,
+        })
+
+    return result
