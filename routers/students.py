@@ -54,7 +54,6 @@ def create_student(
         import time
         student.student_id = f"STU{int(time.time())}"
 
-    # Check for duplicate student_id
     existing = session.exec(select(Student).where(Student.student_id == student.student_id)).first()
     if existing:
         raise HTTPException(status_code=400, detail=f"Student ID '{student.student_id}' already exists")
@@ -66,6 +65,8 @@ def create_student(
     return db_student
 
 
+# !! IMPORTANT: This route MUST be defined BEFORE GET /{student_id}
+# Otherwise FastAPI matches "seed-class" as a student_id and returns 405
 @router.post("/seed-class", response_model=List[StudentRead])
 def seed_class_students(
     seed_req: ClassSeedRequest,
@@ -79,7 +80,7 @@ def seed_class_students(
     class_name = seed_req.class_name.strip().upper()
     division = seed_req.division.strip().upper()
 
-    # Remove existing students for this class+division first to avoid duplicates
+    # Remove existing students for this class+division to avoid duplicates
     existing = session.exec(
         select(Student).where(Student.class_name == class_name, Student.division == division)
     ).all()
@@ -108,6 +109,7 @@ def seed_class_students(
     return created
 
 
+# !! This catch-all route must always be LAST in the file
 @router.get("/{student_id}", response_model=StudentRead)
 def read_student(
     student_id: str,
