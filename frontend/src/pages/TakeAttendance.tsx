@@ -170,10 +170,18 @@ const TakeAttendance: React.FC = () => {
         if (!className || !selectedDivision) return;
         setIsLoading(true);
         setAutoSeeded(false);
+        setMessage(null);
         try {
-            const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` };
+            const token = localStorage.getItem('token');
+            const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
             const url = `${API_URL}/students/?class_name=${encodeURIComponent(className)}&division=${encodeURIComponent(selectedDivision)}&limit=100`;
             const res = await fetch(url, { headers });
+
+            if (res.status === 401) {
+                setMessage({ type: 'error', text: 'Session expired — please log out and log in again.' });
+                setIsLoading(false);
+                return;
+            }
             if (!res.ok) throw new Error('fetch failed');
             let data: Student[] = await res.json();
             data.sort((a, b) => a.roll_no - b.roll_no);
@@ -188,6 +196,9 @@ const TakeAttendance: React.FC = () => {
                 if (seedRes.ok) {
                     data = (await seedRes.json() as Student[]).sort((a, b) => a.roll_no - b.roll_no);
                     setAutoSeeded(true);
+                } else {
+                    const errBody = await seedRes.json().catch(() => ({}));
+                    setMessage({ type: 'error', text: `Auto-generate failed (${seedRes.status}): ${errBody?.detail ?? 'Unknown error'}` });
                 }
             }
 
@@ -196,11 +207,12 @@ const TakeAttendance: React.FC = () => {
             data.forEach(s => { init[s.student_id] = 'P'; });
             setAttendance(init);
         } catch {
-            setMessage({ type: 'error', text: 'Could not load students.' });
+            setMessage({ type: 'error', text: 'Network error — could not load students. Check your connection.' });
         } finally {
             setIsLoading(false);
         }
     }, [className, selectedDivision]);
+
 
     useEffect(() => {
         if (step === LAST_STEP) fetchStudents(true);

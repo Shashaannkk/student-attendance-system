@@ -73,9 +73,9 @@ def seed_class_students(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    """Seed 40 real named students for a given class + division."""
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Only admins can seed students")
+    """Seed 40 real named students for a given class + division.
+    Allowed for both admins and teachers (needed for attendance flow).
+    """
 
     class_name = seed_req.class_name.strip().upper()
     division = seed_req.division.strip().upper()
